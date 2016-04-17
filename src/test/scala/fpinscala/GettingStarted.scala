@@ -18,4 +18,8 @@ object GettingStartedSpec extends Properties("GettingStartedSpec") {
     isSorted(a, (x: Int, y: Int) => x <= y) == isSorted(a.reverse, (x: Int, y: Int) => x >= y)
   }
 
+  property("is sorted v2") = forAll { a: Array[Int] =>
+    isSorted2(a, (x: Int, y: Int) => x <= y) == isSorted2(a.reverse, (x: Int, y: Int) => x >= y)
+  }
+
 }

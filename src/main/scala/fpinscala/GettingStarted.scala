@@ -1,6 +1,7 @@
 package fpinscala
 
 import scala.math.BigInt
+import scala.reflect.ClassTag
 
 object GettingStarted {
 
@@ -27,7 +28,12 @@ object GettingStarted {
   }
 
   // ex 2.2
-  def isSorted[A](as: Array[A], ordered: (A, A) => Boolean): Boolean = {
+  def isSorted[A: ClassTag](as: Array[A], ordered: (A, A) => Boolean): Boolean = as match {
+    case Array(x, y, t @ _*) => ordered(x, y) && isSorted((y +: t).toArray[A], ordered)
+    case _ => true
+  }
+
+  def isSorted2[A](as: Array[A], ordered: (A, A) => Boolean): Boolean = {
     as.sliding(2).forall(xs => xs match {
       case Array(x, y, _*) => ordered(x, y)
       case _ => true
