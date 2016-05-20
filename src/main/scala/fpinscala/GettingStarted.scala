@@ -16,8 +16,7 @@ object GettingStarted {
     */
   def fib(n: BigInt): BigInt = {
     @annotation.tailrec
-    def go(i: BigInt, p: BigInt, c: BigInt): BigInt =
-      if (i < n) go(i + 1, c, p + c) else p + c
+    def go(i: BigInt, p: BigInt, c: BigInt): BigInt =    if (i < n) go(i + 1, c, p + c) else p + c
 
     val zero = BigInt(0)
     val one = BigInt(1)
@@ -29,9 +28,9 @@ object GettingStarted {
   }
 
   // ex 2.2
-  def isSorted[A : ClassTag](
+  def isSorted[A: ClassTag](
       as: Array[A], ordered: (A, A) => Boolean): Boolean = as match {
-    case Array(x, y, t@_ *) =>
+    case Array(x, y, t @ _ *) =>
       ordered(x, y) && isSorted((y +: t).toArray[A], ordered)
     case _ => true
   }
