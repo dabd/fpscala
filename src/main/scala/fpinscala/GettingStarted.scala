@@ -11,7 +11,7 @@ object GettingStarted {
     * fib(0) = 0, fib(1) = 1
     * fib(i) = fib(i-2) + fib(i-1), for 2 <= i <= n
     *
-    * @param n [[BigInt]] the nth element of the fibonacci sequence
+    * @param n [[BigInt]] the nth element of the Fibonacci sequence
     * @return nth fibonacci number
     */
   def fib(n: BigInt): BigInt = {
