@@ -16,7 +16,8 @@ object GettingStarted {
     */
   def fib(n: BigInt): BigInt = {
     @annotation.tailrec
-    def go(i: BigInt, p: BigInt, c: BigInt): BigInt =    if (i < n) go(i + 1, c, p + c) else p + c
+    def go(i: BigInt, p: BigInt, c: BigInt): BigInt =
+      if (i < n) go(i + 1, c, p + c) else p + c
 
     val zero = BigInt(0)
     val one = BigInt(1)
