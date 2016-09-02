@@ -25,9 +25,36 @@ object DataStructuresSpec extends Properties("DataStructuresSpec") {
   property("tail") = forAll { l: List[Int] =>
     l match {
       case Nil => true
-      case Cons(h, t) => tail(l) == t
+      case Cons(_, t) => tail(l) == t
     }
+  }
 
+  property("setHead") = forAll { (l: List[Int], h: Int) =>
+    l match {
+      case Nil => true
+      case Cons(_, t) => setHead(l, h) == Cons(h, t)
+    }
+  }
+
+  property("length") = forAll { l: List[Int] =>
+    l match {
+      case Nil => true
+      case Cons(_, t) => length(l) == length(t) + 1
+    }
+  }
+
+  val genListAndSize = for {
+    l <- arbList.arbitrary
+    n <- Gen.choose(0, length(l))
+  } yield (l, n)
+
+  property("drop") = forAll(genListAndSize) {
+    case (l, n) =>
+      (l, n) match {
+        case (Nil, _) => drop(l, n) == Nil
+        case (Cons(_, t), 0) => drop(l, n) == l
+        case (Cons(_, t), n) => drop(l, n) == drop(t, n - 1)
+      }
   }
 
 }
