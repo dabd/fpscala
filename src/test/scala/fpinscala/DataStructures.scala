@@ -36,16 +36,16 @@ object DataStructuresSpec extends Properties("DataStructuresSpec") {
     }
   }
 
-  property("length") = forAll { l: List[Int] =>
+  property("length2") = forAll { l: List[Int] =>
     l match {
-      case Nil => true
-      case Cons(_, t) => length(l) == length(t) + 1
+      case Nil => length2(l) == 0
+      case Cons(_, t) => length2(l) == length2(t) + 1
     }
   }
 
   val genListAndSize = for {
     l <- arbList.arbitrary
-    n <- Gen.choose(0, length(l))
+    n <- Gen.choose(0, length2(l))
   } yield (l, n)
 
   property("drop") = forAll(genListAndSize) {
@@ -55,6 +55,68 @@ object DataStructuresSpec extends Properties("DataStructuresSpec") {
         case (Cons(_, t), 0) => drop(l, n) == l
         case (Cons(_, t), n) => drop(l, n) == drop(t, n - 1)
       }
+  }
+
+  import Arbitrary.arbFunction1
+
+  property("dropWhile") = forAll { (l: List[Int], f: Int => Boolean) =>
+    l match {
+      case Nil => dropWhile(Nil, f) == Nil
+      case Cons(h, t) if f(h) => dropWhile(l, f) == dropWhile(t, f)
+      case Cons(h, t) if !f(h) => dropWhile(l, f) == l
+    }
+  }
+
+  property("init") = forAll { l: List[Int] =>
+    l match {
+      case Nil => true
+      case Cons(h, t) => init(l) == reverse(tail(reverse(l)))
+    }
+  }
+
+  property("reverse") = forAll { l: List[Int] =>
+    reverse(reverse(l)) == l
+  }
+
+  property("append") = forAll { (xs: List[Int], ys: List[Int]) =>
+    append(xs, ys) == reverse(append(reverse(ys), reverse(xs)))
+  }
+
+  property("length") = forAll { l: List[Int] =>
+    l match {
+      case Nil => length(l) == 0
+      case Cons(_, t) => length(l) == length(t) + 1
+    }
+  }
+
+  // foldRight universal property of fold (left to right http://www.cs.nott.ac.uk/~pszgmh/fold.pdf)
+  val foldRightUniversal1 =
+    forAll { (l: List[Int], f: (Int, Int) => Int, v: Int) =>
+      def g(l2: List[Int]): Int = l2 match {
+        case Nil => v
+        case Cons(h, t) => f(h, (g(t)))
+      }
+
+      g(l) == foldRight(l, v)(f)
+    }
+
+  // foldRight universal property of fold (right to left http://www.cs.nott.ac.uk/~pszgmh/fold.pdf)
+  val foldRightUniversal2 =
+    forAll { (l: List[Int], f: (Int, Int) => Int, v: Int) =>
+      def g(l2: List[Int]): Int = foldRight(l2, v)(f)
+
+      l match {
+        case Nil => g(l) == v
+        case Cons(h, t) => g(l) == f(h, g(t))
+      }
+
+      g(l) == foldRight(l, v)(f)
+    }
+
+  property("foldRight universal property") = forAll {
+    (l: List[Int], f: (Int, Int) => Int, v: Int) =>
+      foldRightUniversal1 && foldRightUniversal2
+
   }
 
 }

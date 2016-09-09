@@ -29,8 +29,8 @@ object GettingStarted {
   }
 
   // ex 2.2
-  def isSorted[A: ClassTag](
-      as: Array[A], ordered: (A, A) => Boolean): Boolean = as match {
+  def isSorted[A: ClassTag](as: Array[A],
+                            ordered: (A, A) => Boolean): Boolean = as match {
     case Array(x, y, t @ _ *) =>
       ordered(x, y) && isSorted((y +: t).toArray[A], ordered)
     case _ => true
