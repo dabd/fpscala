@@ -71,5 +71,19 @@ object DataStructures {
 
     def length[A](as: List[A]): Int = foldRight(as, 0)((_, acc) => acc + 1)
 
+    // ex: 3.10
+    def foldLeft[A, B](as: List[A], z: B)(f: (B, A) => B): B =
+      as match {
+        case Nil => z
+        case Cons(h, t) => foldLeft(t, f(z, h))(f)
+      }
+
+    // ex: 3.11
+    def sum(l: List[Int]): Int = foldLeft(l, 0)(_ + _)
+
+    def product(l: List[Int]): Int = foldLeft(l, 1)(_ * _)
+
+    def length3(l: List[Int]): Int = foldLeft(l, 0)((acc, _) => acc + 1)
+
   }
 }

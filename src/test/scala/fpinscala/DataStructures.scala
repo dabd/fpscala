@@ -3,6 +3,7 @@ package fpinscala
 import org.scalacheck._
 import DataStructures._
 import DataStructures.List._
+import com.sun.javafx.geom.transform.Identity
 
 object DataStructuresSpec extends Properties("DataStructuresSpec") {
 
@@ -116,7 +117,12 @@ object DataStructuresSpec extends Properties("DataStructuresSpec") {
   property("foldRight universal property") = forAll {
     (l: List[Int], f: (Int, Int) => Int, v: Int) =>
       foldRightUniversal1 && foldRightUniversal2
+  }
 
+  // since foldLeft can be defined in terms of foldRight by foldl f v xs = fold (λx g → (λa → g (f a x))) id xs v
+  property("foldLeft") = forAll {
+    (l: List[Int], f: (Int, Int) => Int, v: Int) =>
+      foldLeft(l, v)(f) == foldRight(l, (b: Int) => b) ((a, g) => b => g(f(b,a)))(v)
   }
 
 }
