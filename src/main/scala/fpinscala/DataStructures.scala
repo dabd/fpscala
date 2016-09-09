@@ -50,9 +50,9 @@ object DataStructures {
       case Cons(h, t) => Cons(h, append(t, ys))
     }
 
-    def reverse[A](l: List[A]): List[A] = l match {
+    def reverse2[A](l: List[A]): List[A] = l match {
       case Nil => Nil
-      case Cons(h, t) => append(reverse(t), Cons(h, Nil))
+      case Cons(h, t) => append(reverse2(t), Cons(h, Nil))
     }
 
     // ex: 3.6
@@ -84,6 +84,19 @@ object DataStructures {
     def product(l: List[Int]): Int = foldLeft(l, 1)(_ * _)
 
     def length3(l: List[Int]): Int = foldLeft(l, 0)((acc, _) => acc + 1)
+
+    // ex: 3.12
+    def reverse[A](l: List[A]): List[A] =
+      foldLeft(l, Nil: List[A])((acc, x) => Cons(x, acc))
+
+    // ex: 3.13
+    def foldLeftInTermsOfFoldRight[A, B](as: List[A], z: B)(f: (B,
+                                                                A) => B): B =
+      foldRight(as, (b: B) => b)((a, g) => b => g(f(b, a)))(z)
+
+    def foldRightInTermsOfFoldLeft[A, B](as: List[A], z: B)(f: (A,
+                                                                B) => B): B =
+      foldLeft(as, (b: B) => b)((g, a) => b => g(f(a, b)))(z)
 
   }
 }

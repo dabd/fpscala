@@ -71,16 +71,16 @@ object DataStructuresSpec extends Properties("DataStructuresSpec") {
   property("init") = forAll { l: List[Int] =>
     l match {
       case Nil => true
-      case Cons(h, t) => init(l) == reverse(tail(reverse(l)))
+      case Cons(h, t) => init(l) == reverse2(tail(reverse(l)))
     }
   }
 
-  property("reverse") = forAll { l: List[Int] =>
-    reverse(reverse(l)) == l
+  property("reverse2") = forAll { l: List[Int] =>
+    reverse2(reverse2(l)) == l
   }
 
   property("append") = forAll { (xs: List[Int], ys: List[Int]) =>
-    append(xs, ys) == reverse(append(reverse(ys), reverse(xs)))
+    append(xs, ys) == reverse2(append(reverse2(ys), reverse2(xs)))
   }
 
   property("length") = forAll { l: List[Int] =>
@@ -110,8 +110,6 @@ object DataStructuresSpec extends Properties("DataStructuresSpec") {
         case Nil => g(l) == v
         case Cons(h, t) => g(l) == f(h, g(t))
       }
-
-      g(l) == foldRight(l, v)(f)
     }
 
   property("foldRight universal property") = forAll {
@@ -120,9 +118,24 @@ object DataStructuresSpec extends Properties("DataStructuresSpec") {
   }
 
   // since foldLeft can be defined in terms of foldRight by foldl f v xs = fold (λx g → (λa → g (f a x))) id xs v
-  property("foldLeft") = forAll {
+  property("foldLeft") = forAll { (l: List[Int], f: (Int, Int) => Int,
+                                   v: Int) =>
+    foldLeft(l, v)(f) == foldRight(l, (b: Int) => b)((a, g) =>
+      b => g(f(b, a)))(v)
+  }
+
+  property("reverse") = forAll { l: List[Int] =>
+    reverse(reverse(l)) == l
+  }
+
+  property("foldLeftInTermsOfFoldRight") = forAll {
     (l: List[Int], f: (Int, Int) => Int, v: Int) =>
-      foldLeft(l, v)(f) == foldRight(l, (b: Int) => b) ((a, g) => b => g(f(b,a)))(v)
+      foldLeftInTermsOfFoldRight(l, v)(f) == foldLeft(l, v)(f)
+  }
+
+  property("foldRightInTermsOfFoldLeft") = forAll {
+    (l: List[Int], f: (Int, Int) => Int, v: Int) =>
+      foldRightInTermsOfFoldLeft(l, v)(f) == foldRight(l, v)(f)
   }
 
 }
