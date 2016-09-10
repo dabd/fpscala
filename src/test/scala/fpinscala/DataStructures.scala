@@ -162,12 +162,19 @@ object DataStructuresSpec extends Properties("DataStructuresSpec") {
     add1(l) == add1Recursive(l)
   }
 
-  property("listDoubleToListString") = forAll { l: List[Double] =>
-    def listDoubleToListStringRec(l: List[Double]): List[String] = l match {
+  property("listDoubleToString") = forAll { l: List[Double] =>
+    def recListDoubleToString(l: List[Double]): List[String] = l match {
       case Nil => Nil
-      case Cons(h, t) => Cons(h.toString, listDoubleToListStringRec(t))
+      case Cons(h, t) => Cons(h.toString, recListDoubleToString(t))
     }
-    listDoubleToListString(l) == listDoubleToListStringRec(l)
+    listDoubleToString(l) == recListDoubleToString(l)
   }
 
+  property("map") = forAll { (l: List[Int], f: Int => Int) =>
+    map(l, f) == mapRecursive(l, f)
+  }
+
+  property("filter") = forAll { (l: List[Int], f: Int => Boolean) =>
+    filter(l)(f) == filterRecursive(l)(f)
+  }
 }
