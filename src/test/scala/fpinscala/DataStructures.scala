@@ -1,27 +1,34 @@
 package fpinscala
 
+import fpinscala.DataStructures.List._
+import fpinscala.DataStructures._
 import org.scalacheck._
-import DataStructures._
-import DataStructures.List._
-import com.sun.javafx.geom.transform.Identity
 
 object DataStructuresSpec extends Properties("DataStructuresSpec") {
 
   import org.scalacheck.Prop.forAll
 
-  implicit val arbList: Arbitrary[List[Int]] = Arbitrary {
-
+  def arbListT[T](gen: Gen[T]): Arbitrary[List[T]] = Arbitrary {
     val genNil = Gen.const(Nil)
 
     lazy val genCons = for {
-      h <- Arbitrary.arbitrary[Int]
+      h <- gen
       t <- genList
     } yield Cons(h, t)
 
-    def genList: Gen[List[Int]] = Gen.oneOf(genNil, genCons)
+    def genList: Gen[List[T]] = Gen.oneOf(genNil, genCons)
 
     genList
   }
+
+  implicit val arbListInt: Arbitrary[List[Int]] =
+    arbListT[Int](Arbitrary.arbInt.arbitrary)
+
+  implicit val arbNestedListInt: Arbitrary[List[List[Int]]] =
+    arbListT[List[Int]](arbListInt.arbitrary)
+
+  implicit val arbListDouble: Arbitrary[List[Double]] =
+    arbListT[Double](Arbitrary.arbDouble.arbitrary)
 
   property("tail") = forAll { l: List[Int] =>
     l match {
@@ -37,16 +44,16 @@ object DataStructuresSpec extends Properties("DataStructuresSpec") {
     }
   }
 
-  property("length2") = forAll { l: List[Int] =>
+  property("length") = forAll { l: List[Int] =>
     l match {
-      case Nil => length2(l) == 0
-      case Cons(_, t) => length2(l) == length2(t) + 1
+      case Nil => length(l) == 0
+      case Cons(_, t) => length(l) == length(t) + 1
     }
   }
 
   val genListAndSize = for {
-    l <- arbList.arbitrary
-    n <- Gen.choose(0, length2(l))
+    l <- arbListInt.arbitrary
+    n <- Gen.choose(0, length(l))
   } yield (l, n)
 
   property("drop") = forAll(genListAndSize) {
@@ -71,29 +78,26 @@ object DataStructuresSpec extends Properties("DataStructuresSpec") {
   property("init") = forAll { l: List[Int] =>
     l match {
       case Nil => true
-      case Cons(h, t) => init(l) == reverse2(tail(reverse(l)))
+      case Cons(h, t) => init(l) == reverse(tail(reverse2(l)))
     }
   }
 
-  property("reverse2") = forAll { l: List[Int] =>
-    reverse2(reverse2(l)) == l
+  property("reverse is its own inverse") = forAll { l: List[Int] =>
+    reverse(reverse(l)) == l
   }
 
   property("append") = forAll { (xs: List[Int], ys: List[Int]) =>
-    append(xs, ys) == reverse2(append(reverse2(ys), reverse2(xs)))
+    append(xs, ys) == reverse(append(reverse(ys), reverse(xs)))
   }
 
-  property("length") = forAll { l: List[Int] =>
-    l match {
-      case Nil => length(l) == 0
-      case Cons(_, t) => length(l) == length(t) + 1
-    }
+  property("length2") = forAll { l: List[Int] =>
+    length2(l) == length(l)
   }
 
   // foldRight universal property of fold (left to right http://www.cs.nott.ac.uk/~pszgmh/fold.pdf)
   val foldRightUniversal1 =
     forAll { (l: List[Int], f: (Int, Int) => Int, v: Int) =>
-      def g(l2: List[Int]): Int = l2 match {
+      def g(l: List[Int]): Int = l match {
         case Nil => v
         case Cons(h, t) => f(h, (g(t)))
       }
@@ -124,8 +128,12 @@ object DataStructuresSpec extends Properties("DataStructuresSpec") {
       b => g(f(b, a)))(v)
   }
 
-  property("reverse") = forAll { l: List[Int] =>
-    reverse(reverse(l)) == l
+  property("length3") = forAll { l: List[Int] =>
+    length3(l) == length(l)
+  }
+
+  property("reverse2") = forAll { l: List[Int] =>
+    reverse2(l) == reverse(l)
   }
 
   property("foldLeftInTermsOfFoldRight") = forAll {
@@ -136,6 +144,30 @@ object DataStructuresSpec extends Properties("DataStructuresSpec") {
   property("foldRightInTermsOfFoldLeft") = forAll {
     (l: List[Int], f: (Int, Int) => Int, v: Int) =>
       foldRightInTermsOfFoldLeft(l, v)(f) == foldRight(l, v)(f)
+  }
+
+  property("append2") = forAll { (xs: List[Int], ys: List[Int]) =>
+    append2(xs, ys) == append(xs, ys)
+  }
+
+  property("flatten") = forAll { l: List[List[Int]] =>
+    def recFlatten(l: List[List[Int]]): List[Int] = l match {
+      case Nil => Nil
+      case Cons(h, t) => append(h, recFlatten(t))
+    }
+    flatten(l) == recFlatten(l)
+  }
+
+  property("add1") = forAll { l: List[Int] =>
+    add1(l) == add1Recursive(l)
+  }
+
+  property("listDoubleToListString") = forAll { l: List[Double] =>
+    def listDoubleToListStringRec(l: List[Double]): List[String] = l match {
+      case Nil => Nil
+      case Cons(h, t) => Cons(h.toString, listDoubleToListStringRec(t))
+    }
+    listDoubleToListString(l) == listDoubleToListStringRec(l)
   }
 
 }
