@@ -5,7 +5,9 @@ import scala.annotation.tailrec
 object DataStructures {
 
   sealed trait List[+A]
+
   case object Nil extends List[Nothing]
+
   case class Cons[+A](head: A, tail: List[A]) extends List[A]
 
   object List {
@@ -208,7 +210,56 @@ object DataStructures {
       foldRight(as, Nil: List[A])((a, acc) => if (f(a)) Cons(a, acc) else acc)
 
     // ex 3.20
-    
+    def flatMapRecursive[A, B](as: List[A])(f: A => List[B]): List[B] =
+      as match {
+        case Nil => Nil
+        case Cons(h, t) => append(f(h), flatMapRecursive(t)(f))
+      }
+
+    def flatMap[A, B](as: List[A])(f: A => List[B]): List[B] =
+      foldRight(as, Nil: List[B])((a, acc) => append(f(a), acc))
+
+    def flatMap2[A, B](as: List[A])(f: A => List[B]): List[B] =
+      foldRight(as, Nil: List[B])(
+        Function.uncurried((append[B] _).curried.compose(f)))
+
+    // ex 3.21
+    def filter2[A](as: List[A])(f: A => Boolean): List[A] =
+      flatMap(as)(a => if (f(a)) Cons(a, Nil) else Nil)
+
+    // ex 3.22
+    def addLists(as: List[Int], bs: List[Int]): List[Int] = (as, bs) match {
+      case (Cons(h1, t1), Cons(h2, t2)) => Cons(h1 + h2, addLists(t1, t2))
+      case _ => Nil
+    }
+
+    def nth[A](n: Int, as: List[A]): Option[A] = (as, n) match {
+      case (Nil, _) => None
+      case (_, n) if n < 0 => None
+      case (Cons(h, _), 0) => Some(h)
+      case (Cons(h, t), n) => nth(n - 1, t)
+    }
+
+    // ex 3.23
+    def zipWithRecursive[A, B, C](as: List[A],
+                                  bs: List[B],
+                                  f: (A, B) => C): List[C] = (as, bs) match {
+      case (Cons(h1, t1), Cons(h2, t2)) =>
+        Cons(f(h1, h2), zipWithRecursive(t1, t2, f))
+      case _ => Nil
+    }
+
+    def zipWith[A, B, C](as: List[A], bs: List[B], f: (A, B) => C): List[C] = {
+      def nil(bs: List[B]): List[C] = Nil
+      def cons(a: A)(zipsFn: List[B] => List[C])(bs: List[B]): List[C] =
+        bs match {
+          case Nil => Nil
+          case Cons(h, t) => Cons(f(a, h), zipsFn(t))
+        }
+
+      foldRight(as, nil _)(cons(_)(_))(bs)
+    }
 
   }
+
 }

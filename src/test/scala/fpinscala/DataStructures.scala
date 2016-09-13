@@ -177,4 +177,39 @@ object DataStructuresSpec extends Properties("DataStructuresSpec") {
   property("filter") = forAll { (l: List[Int], f: Int => Boolean) =>
     filter(l)(f) == filterRecursive(l)(f)
   }
+
+  property("flatMap") = forAll { (l: List[Int], f: Int => List[Int]) =>
+    flatMap(l)(f) == flatMapRecursive(l)(f)
+  }
+
+  property("filter2") = forAll { (l: List[Int], f: Int => Boolean) =>
+    filter2(l)(f) == filterRecursive(l)(f)
+  }
+
+  val addListsLengthIsSmallerOfTheTwo = forAll {
+    (xs: List[Int], ys: List[Int]) =>
+      length(addLists(xs, ys)) == length(xs).min(length(ys))
+  }
+
+  val genListsAndSize = for {
+    xs <- arbListInt.arbitrary
+    ys <- arbListInt.arbitrary
+    n <- Gen.choose(0, length(xs).min(length(ys)))
+  } yield (xs, ys, n)
+
+  property("addLists") = addListsLengthIsSmallerOfTheTwo && forAll(
+      genListsAndSize) {
+    case (xs, ys, n) =>
+      (for {
+        z <- nth(n, addLists(xs, ys))
+        x <- nth(n, xs)
+        y <- nth(n, ys)
+      } yield z == x + y).getOrElse(true)
+  }
+
+  property("zipWith") = forAll { (xs: List[Int], ys: List[Int], f: (Int, Int) => Int) =>
+    zipWith(xs, ys, f) == zipWithRecursive(xs, ys, f)
+  }
+
+
 }
