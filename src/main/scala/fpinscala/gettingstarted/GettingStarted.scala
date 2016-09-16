@@ -1,4 +1,4 @@
-package fpinscala
+package fpinscala.gettingstarted
 
 import scala.math.BigInt
 import scala.reflect.ClassTag
