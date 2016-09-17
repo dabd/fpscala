@@ -71,6 +71,11 @@ class EitherSpec extends CommonSpec {
       a.map2_2(b)(f) mustBe a.map2(b)(f)
   }
 
+  "map2_3" should "be equal to map2" in {
+    (a: Either[String, Int], b: Either[String, Int], f: (Int, Int) => Int) =>
+      a.map2_3(b)(f) mustBe a.map2(b)(f)
+  }
+
   "sequence" should "be" in forAll { xs: List[Either[String, Int]] =>
     Either.sequence(xs) mustBe (if (!xs.exists(_.isLeft))
                                   Right(xs.map(_.right))
