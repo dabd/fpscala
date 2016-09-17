@@ -72,5 +72,4 @@ object Option {
   def traverse[A, B](a: List[A])(f: A => Option[B]): Option[List[B]] =
     a.foldRight(Some(Nil): Option[List[B]])((a, acc) =>
       map2(f(a), acc)(_ :: _))
-
 }

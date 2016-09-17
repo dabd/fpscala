@@ -46,8 +46,10 @@ sealed trait Either[+E, +A] {
   }
 
   def isRight: Boolean = !isLeft
-
 }
+
+case class Left[+E](value: E) extends Either[E, Nothing]
+case class Right[+A](value: A) extends Either[Nothing, A]
 
 object Either {
   // ex 4.7
@@ -63,5 +65,3 @@ object Either {
       f(a).map2(acc)(_ :: _))
 }
 
-case class Left[+E](value: E) extends Either[E, Nothing]
-case class Right[+A](value: A) extends Either[Nothing, A]
