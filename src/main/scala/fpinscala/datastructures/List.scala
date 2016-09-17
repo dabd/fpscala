@@ -46,8 +46,8 @@ object List {
   }
 
   def takeWhile[A](l: List[A], f: A => Boolean): List[A] = l match {
-    case Nil => l
-    case Cons(h, t) => if (f(h)) Cons(h, takeWhile(t, f)) else l
+    case Nil => Nil
+    case Cons(h, t) => if (f(h)) Cons(h, takeWhile(t, f)) else Nil
   }
 
   def append[A](xs: List[A], ys: List[A]): List[A] = xs match {

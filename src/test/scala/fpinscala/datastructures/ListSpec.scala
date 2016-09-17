@@ -36,7 +36,7 @@ class ListSpec extends CommonSpec {
   "tail" should "be t" in forAll { l: List[Int] =>
     l match {
       case Nil => true
-      case Cons(_, t) => tail(l) == t
+      case Cons(_, t) => tail(l) mustBe t
     }
   }
 
@@ -44,48 +44,56 @@ class ListSpec extends CommonSpec {
     (l: List[Int], h: Int) =>
       l match {
         case Nil => true
-        case Cons(_, t) => setHead(l, h) == Cons(h, t)
+        case Cons(_, t) => setHead(l, h) mustBe Cons(h, t)
       }
   }
 
   "length(xs ++ ys)" should "be length(xs) + length(ys)" in forAll {
     (xs: List[Int], ys: List[Int]) =>
-      List.length(append(xs, ys)) == List.length(xs) + List.length(ys)
+      List.length(append(xs, ys)) mustBe List.length(xs) + List.length(ys)
   }
 
   "drop(xs ++ ys, length(xs))" should "be ys" in forAll {
     (xs: List[Int], ys: List[Int]) =>
-      drop(append(xs, ys), List.length(xs)) == ys
+      drop(append(xs, ys), List.length(xs)) mustBe ys
   }
 
   "appending takeWhile and dropWhile" should "be the original list" in forAll {
     (l: List[Int], f: Int => Boolean) =>
-      l == append(takeWhile(l, f), dropWhile(l, f))
+      l mustBe append(takeWhile(l, f), dropWhile(l, f))
+  }
+
+  "takeWhile" should "be" in forAll { (l: List[Int], f: Int => Boolean) =>
+    toScalaList(takeWhile(l, f)) mustBe toScalaList(l).takeWhile(f)
+  }
+
+  "dropWhile" should "be" in forAll { (l: List[Int], f: Int => Boolean) =>
+    toScalaList(dropWhile(l, f)) mustBe toScalaList(l).dropWhile(f)
   }
 
   "init(t :: [h])" should "be t" in forAll { (l: List[Int]) =>
     l match {
       case Nil => true
-      case Cons(h, t) => init(append(t, Cons(h, Nil))) == t
+      case Cons(h, t) => init(append(t, Cons(h, Nil))) mustBe t
     }
   }
 
   "reverse(reverse(l)" should "be l" in forAll { l: List[Int] =>
-    reverse(reverse(l)) == l
+    reverse(reverse(l)) mustBe l
   }
 
   "reverse" should "be distributive in relation to append" in forAll {
     (xs: List[Int], ys: List[Int]) =>
-      reverse(append(xs, ys)) == append(reverse(ys), reverse(xs))
+      reverse(append(xs, ys)) mustBe append(reverse(ys), reverse(xs))
   }
 
   "append" should "be associative" in forAll {
     (xs: List[Int], ys: List[Int], zs: List[Int]) =>
-      append(append(xs, ys), zs) == append(xs, append(ys, zs))
+      append(append(xs, ys), zs) mustBe append(xs, append(ys, zs))
   }
 
   "length2" should "be equal to length" in forAll { l: List[Int] =>
-    length2(l) == List.length(l)
+    length2(l) mustBe List.length(l)
   }
 
   // foldRight universal property of fold http://www.cs.nott.ac.uk/~pszgmh/fold.pdf
@@ -105,49 +113,51 @@ class ListSpec extends CommonSpec {
         case Cons(h, t) => g2(l) == f(h, g2(t))
       }
 
-      p1 && p2
+      p1 && p2 mustBe true
   }
 
-  "foldRight(xs ++ ys, v)(f)" should "be foldRight(xs, foldRight(ys, v)(f))(f)" in forAll { (xs: List[Int], ys: List[Int], v: Int, f: (Int, Int) => Int) =>
-  foldRight(append(xs, ys), v)(f) mustBe foldRight(xs, foldRight(ys, v)(f))(f)
+  "foldRight(xs ++ ys, v)(f)" should "be foldRight(xs, foldRight(ys, v)(f))(f)" in forAll {
+    (xs: List[Int], ys: List[Int], v: Int, f: (Int, Int) => Int) =>
+      foldRight(append(xs, ys), v)(f) mustBe foldRight(xs,
+                                                       foldRight(ys, v)(f))(f)
   }
 
   // since foldLeft can be defined in terms of foldRight by foldl f v xs = fold (λx g → (λa → g (f a x))) id xs v
   "foldLeft" can "be defined in terms of foldRight" in forAll {
     (l: List[Int], f: (Int, Int) => Int, v: Int) =>
-      foldLeft(l, v)(f) == foldRight(l, (b: Int) => b)((a, g) =>
+      foldLeft(l, v)(f) mustBe foldRight(l, (b: Int) => b)((a, g) =>
         b => g(f(b, a)))(v)
   }
 
   "sum" should "equal immutable.List.sum" in forAll { l: List[Int] =>
-    sum(l) == toScalaList(l).sum
+    sum(l) mustBe toScalaList(l).sum
   }
 
   "product" should "equal immutable.List.product" in forAll { l: List[Int] =>
-    product(l) == toScalaList(l).product
+    product(l) mustBe toScalaList(l).product
   }
 
   "length3" should "be equal to length" in forAll { l: List[Int] =>
-    length3(l) == List.length(l)
+    length3(l) mustBe List.length(l)
   }
 
   "reverse2" should "be equal to reverse" in forAll { l: List[Int] =>
-    reverse2(l) == reverse(l)
+    reverse2(l) mustBe reverse(l)
   }
 
   "foldLeftInTermsOfFoldRight" should "be equal to foldLeft" in forAll {
     (l: List[Int], f: (Int, Int) => Int, v: Int) =>
-      foldLeftInTermsOfFoldRight(l, v)(f) == foldLeft(l, v)(f)
+      foldLeftInTermsOfFoldRight(l, v)(f) mustBe foldLeft(l, v)(f)
   }
 
   "foldRightInTermsOfFoldLeft" should "be equal to foldRight" in forAll {
     (l: List[Int], f: (Int, Int) => Int, v: Int) =>
-      foldRightInTermsOfFoldLeft(l, v)(f) == foldRight(l, v)(f)
+      foldRightInTermsOfFoldLeft(l, v)(f) mustBe foldRight(l, v)(f)
   }
 
   "append2" should "be equal to append" in forAll {
     (xs: List[Int], ys: List[Int]) =>
-      append2(xs, ys) == append(xs, ys)
+      append2(xs, ys) mustBe append(xs, ys)
   }
 
   "flatten using fold" should "be equal to recursive flatten" in forAll {
@@ -156,12 +166,12 @@ class ListSpec extends CommonSpec {
         case Nil => Nil
         case Cons(h, t) => append(h, recFlatten(t))
       }
-      flatten(l) == recFlatten(l)
+      flatten(l) mustBe recFlatten(l)
   }
 
   "add1 using fold" should "be equal to recursive add1" in forAll {
     l: List[Int] =>
-      add1(l) == add1Recursive(l)
+      add1(l) mustBe add1Recursive(l)
   }
 
   "listDoubleToString using fold" should "be equal to recursive listDoubleToString" in forAll {
@@ -170,37 +180,37 @@ class ListSpec extends CommonSpec {
         case Nil => Nil
         case Cons(h, t) => Cons(h.toString, recListDoubleToString(t))
       }
-      listDoubleToString(l) == recListDoubleToString(l)
+      listDoubleToString(l) mustBe recListDoubleToString(l)
   }
 
   "map using fold" should "be equal to recursive map" in forAll {
     (l: List[Int], f: Int => Int) =>
-      map(l, f) == mapRecursive(l, f)
+      map(l, f) mustBe mapRecursive(l, f)
   }
 
   "filter using fold" should "be equal to recursive filter" in forAll {
     (l: List[Int], f: Int => Boolean) =>
-      filter(l)(f) == filterRecursive(l)(f)
+      filter(l)(f) mustBe filterRecursive(l)(f)
   }
 
   "flatMap using fold" should "be equal to recursive flatMap" in forAll {
     (l: List[Int], f: Int => List[Int]) =>
-      flatMap(l)(f) == flatMapRecursive(l)(f)
+      flatMap(l)(f) mustBe flatMapRecursive(l)(f)
   }
 
   "filter2 using flatMap" should "be equal to recursive filter" in forAll {
     (l: List[Int], f: Int => Boolean) =>
-      filter2(l)(f) == filterRecursive(l)(f)
+      filter2(l)(f) mustBe filterRecursive(l)(f)
   }
 
   "addLists using zipWith" should "be equal to recursive addLists" in forAll {
     (xs: List[Int], ys: List[Int]) =>
-      addLists(xs, ys) == addListsRecursive(xs, ys)
+      addLists(xs, ys) mustBe addListsRecursive(xs, ys)
   }
 
   "zipWith using fold" should "be equal to recursive zipWith" in forAll {
     (xs: List[Int], ys: List[Int], f: (Int, Int) => Int) =>
-      zipWith(xs, ys, f) == zipWithRecursive(xs, ys, f)
+      zipWith(xs, ys, f) mustBe zipWithRecursive(xs, ys, f)
   }
 
   "startsWith" should "be" in forAll { (xs: List[Int], ys: List[Int]) =>

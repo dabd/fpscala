@@ -15,29 +15,29 @@ class EitherSpec extends CommonSpec {
 
   "left" should "be" in forAll { x: Either[String, Int] =>
     x match {
-      case Left(e) => e
+      case Left(e) => x.left mustBe e
       case _ => true
     }
   }
 
   "right" should "be" in forAll { x: Either[String, Int] =>
     x match {
-      case Right(a) => a
+      case Right(a) => x.right mustBe a
       case _ => true
     }
   }
 
   "isLeft" should "be" in forAll { x: Either[String, Int] =>
     x match {
-      case Left(_) => true
-      case _ => false
+      case Left(_) => x.isLeft mustBe true
+      case _ => x.isLeft mustBe false
     }
   }
 
   "isRight" should "be" in forAll { x: Either[String, Int] =>
     x match {
-      case Right(_) => true
-      case _ => false
+      case Right(_) => x.isRight mustBe true
+      case _ => x.isRight mustBe false
     }
   }
 
@@ -69,6 +69,11 @@ class EitherSpec extends CommonSpec {
   "map2_2" should "be equal to map2" in {
     (a: Either[String, Int], b: Either[String, Int], f: (Int, Int) => Int) =>
       a.map2_2(b)(f) mustBe a.map2(b)(f)
+  }
+
+  "map2_3" should "be equal to map2" in {
+    (a: Either[String, Int], b: Either[String, Int], f: (Int, Int) => Int) =>
+      a.map2_3(b)(f) mustBe a.map2(b)(f)
   }
 
   "sequence" should "be" in forAll { xs: List[Either[String, Int]] =>

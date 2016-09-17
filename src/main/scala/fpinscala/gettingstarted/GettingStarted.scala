@@ -28,6 +28,16 @@ object GettingStarted {
     }
   }
 
+  def fibRecursive(n: BigInt): BigInt = {
+    val zero = BigInt(0)
+    val one = BigInt(1)
+    n match {
+      case `zero` => 0
+      case `one` => 1
+      case _ => fibRecursive(n - 1) + fibRecursive(n - 2)
+    }
+  }
+
   // ex 2.2
   def isSorted[A: ClassTag](as: Array[A],
                             ordered: (A, A) => Boolean): Boolean = as match {
