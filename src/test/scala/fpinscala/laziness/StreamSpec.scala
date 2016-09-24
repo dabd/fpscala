@@ -27,13 +27,12 @@ class StreamSpec extends CommonSpec {
   }
 
   "append" should "be associative" in forAll {
-    (xs: Stream[Int], ys: Stream[Int], zs: Stream[Int]) =>
-      xs.append(ys).append(zs).toList mustBe xs.append(ys.append(zs)).toList
+    (xs: Stream[Int], ys: Stream[Int]) =>
+      xs.append(ys).toList mustBe xs.toList ::: ys.toList
   }
 
-  "length(xs ++ ys)" should "be length(xs) + length(ys)" in forAll {
-    (xs: Stream[Int], ys: Stream[Int]) =>
-      xs.append(ys).length mustBe xs.length + ys.length
+  "length" should "be" in forAll { xs: Stream[Int] =>
+    xs.length mustBe xs.toList.length
   }
 
   "take" should "be" in forAll { (xs: Stream[Int], n: Int) =>
