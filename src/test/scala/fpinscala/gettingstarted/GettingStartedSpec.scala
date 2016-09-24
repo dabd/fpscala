@@ -21,7 +21,7 @@ class GettingStartedSpec extends CommonSpec {
   "isSorted2" should "be equal to isSorted" in forAll { a: Array[Int] =>
     isSorted2(a, (x: Int, y: Int) => x <= y) mustBe isSorted(
       a,
-      (x: Int, y: Int) => x >= y)
+      (x: Int, y: Int) => x <= y)
   }
 
   // https://gitter.im/typelevel/cats?at=57c5b7d065053b006ce0f3d3

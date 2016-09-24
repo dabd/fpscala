@@ -46,4 +46,45 @@ class StreamSpec extends CommonSpec {
   "takeWhile" should "be" in forAll { (xs: Stream[Int], p: Int => Boolean) =>
     xs.takeWhile(p).toList mustBe xs.toList.takeWhile(p)
   }
+
+  "foldRight" should "be" in forAll {
+    (xs: Stream[Int], z: Int, f: (Int, Int) => Int) =>
+      def g(a: Int, b: => Int): Int = f(a, b)
+
+      xs.foldRight(z)(g) mustBe xs.toList.foldRight(z)(f)
+  }
+
+  "forAll" should "be" in forAll { (xs: Stream[Int], p: Int => Boolean) =>
+    xs.forAll(p) mustBe xs.toList.forall(p)
+  }
+
+  "takeWhileWithFoldRight" should "be equal to foldRight" in forAll {
+    (xs: Stream[Int], p: Int => Boolean) =>
+      xs.takeWhileWithFoldRight(p).toList mustBe xs.takeWhile(p).toList
+  }
+
+  "headOptionWithFoldRight" should "be equal to headOption" in forAll {
+    xs: Stream[Int] =>
+      xs.headOptionWithFoldRight mustBe xs.headOption
+  }
+
+  "map" should "be" in forAll { (xs: Stream[Int], f: Int => Int) =>
+    xs.map(f).toList mustBe xs.toList.map(f)
+  }
+
+  "filter" should "be" in forAll { (xs: Stream[Int], p: Int => Boolean) =>
+    xs.filter(p).toList mustBe xs.toList.filter(p)
+  }
+
+  "appendWithFoldRight" should "be" in forAll {
+    (xs: Stream[Int], ys: Stream[Int]) =>
+      xs.appendWithFoldRight(ys).toList mustBe xs.append(ys).toList
+  }
+
+  "flatMap of Stream" should "be equal to flatMap of List" in forAll {
+    (xs: Stream[Int], f: Int => Stream[Int]) =>
+      def g(x: Int): List[Int] = f(x).toList
+
+      xs.flatMap(f).toList mustBe xs.toList.flatMap(g)
+  }
 }
