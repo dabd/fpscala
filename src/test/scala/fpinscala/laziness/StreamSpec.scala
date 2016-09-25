@@ -26,35 +26,35 @@ class StreamSpec extends CommonSpec {
     Stream.fromList(l).toList mustBe l
   }
 
-  "append" should "be associative" in forAll {
+  "append for Stream" should "be equal to append for List" in forAll {
     (xs: Stream[Int], ys: Stream[Int]) =>
       xs.append(ys).toList mustBe xs.toList ::: ys.toList
   }
 
-  "length" should "be" in forAll { xs: Stream[Int] =>
+  "length for Stream" should "be equal to length for List" in forAll { xs: Stream[Int] =>
     xs.length mustBe xs.toList.length
   }
 
-  "take" should "be" in forAll { (xs: Stream[Int], n: Int) =>
+  "take for Stream" should "be equal to take for List" in forAll { (xs: Stream[Int], n: Int) =>
     xs.take(n).toList mustBe xs.toList.take(n)
   }
 
-  "drop" should "be" in forAll { (xs: Stream[Int], n: Int) =>
+  "drop for Stream" should "be equal to drop for List" in forAll { (xs: Stream[Int], n: Int) =>
     xs.drop(n).toList mustBe xs.toList.drop(n)
   }
 
-  "takeWhile" should "be" in forAll { (xs: Stream[Int], p: Int => Boolean) =>
+  "takeWhile from Stream" should "be equal to takeWhile from List" in forAll { (xs: Stream[Int], p: Int => Boolean) =>
     xs.takeWhile(p).toList mustBe xs.toList.takeWhile(p)
   }
 
-  "foldRight" should "be" in forAll {
+  "foldRight a Stream" should "be equal to foldRight a List" in forAll {
     (xs: Stream[Int], z: Int, f: (Int, Int) => Int) =>
       def g(a: Int, b: => Int): Int = f(a, b)
 
       xs.foldRight(z)(g) mustBe xs.toList.foldRight(z)(f)
   }
 
-  "forAll" should "be" in forAll { (xs: Stream[Int], p: Int => Boolean) =>
+  "forAll for Stream" should "be equal to forall for List" in forAll { (xs: Stream[Int], p: Int => Boolean) =>
     xs.forAll(p) mustBe xs.toList.forall(p)
   }
 
@@ -68,11 +68,11 @@ class StreamSpec extends CommonSpec {
       xs.headOptionWithFoldRight mustBe xs.headOption
   }
 
-  "map" should "be" in forAll { (xs: Stream[Int], f: Int => Int) =>
+  "map a Stream" should "be equal to map a List" in forAll { (xs: Stream[Int], f: Int => Int) =>
     xs.map(f).toList mustBe xs.toList.map(f)
   }
 
-  "filter" should "be" in forAll { (xs: Stream[Int], p: Int => Boolean) =>
+  "filter a Stream" should "be equal to filter a List" in forAll { (xs: Stream[Int], p: Int => Boolean) =>
     xs.filter(p).toList mustBe xs.toList.filter(p)
   }
 
@@ -87,4 +87,11 @@ class StreamSpec extends CommonSpec {
 
       xs.flatMap(f).toList mustBe xs.toList.flatMap(g)
   }
+
+  "find for Stream" should "be equal to find for List" in forAll {
+    (xs: Stream[Int], p: Int => Boolean) =>
+      xs.find(p) mustBe xs.toList.find(p)
+  }
+
+
 }
