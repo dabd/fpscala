@@ -11,12 +11,6 @@ class ListSpec extends CommonSpec {
   import scala.collection.immutable
   import Arbitrary.arbFunction1
 
-  def toScalaList[A](l: List[A]): immutable.List[A] =
-    foldRight(l, immutable.Nil: immutable.List[A])((a, acc) => a :: acc)
-
-  def fromScalaList[A](l: immutable.List[A]): List[A] =
-    l.foldRight(Nil: List[A])((a, acc) => Cons(a, acc))
-
   implicit def arbList[T: Arbitrary]: Arbitrary[List[T]] = Arbitrary {
     val genNil = Gen.const(Nil)
 

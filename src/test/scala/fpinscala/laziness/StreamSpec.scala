@@ -159,4 +159,36 @@ class StreamSpec extends CommonSpec {
     Stream.unfoldOnes.take(n).toList mustBe Stream.unfoldOnes.take(n).toList
   }
 
+  "unfoldMap" should "be equal to map" in forAll { (xs: Stream[Int], f: Int => Int) =>
+    xs.unfoldMap(f).toList mustBe xs.map(f).toList
+  }
+
+  "unfoldTake" should "be equal to take" in forAll {
+    (xs: Stream[Int], n: Int) =>
+      xs.unfoldTake(n).toList mustBe xs.take(n).toList
+  }
+
+  "unfoldTakeWhile" should "be equal to takeWhile" in forAll {
+    (xs: Stream[Int], p: Int => Boolean) =>
+      xs.unfoldTakeWhile(p).toList mustBe xs.takeWhile(p).toList
+  }
+
+  "unfoldZipWith" should "be equal to zipWith" in forAll {
+    (xs: Stream[Int], ys: Stream[Int], f: (Int, Int) => Int) =>
+      import fpinscala.datastructures.List.zipWith
+      import fpinscala.datastructures.List.fromScalaList
+      import fpinscala.datastructures.List.toScalaList
+      xs.unfoldZipWith(ys, f).toList mustBe toScalaList(
+        zipWith(fromScalaList(xs.toList), fromScalaList(ys.toList), f))
+  }
+
+  "zipAll" should "be" in forAll { (xs: Stream[Int], ys: Stream[Int]) =>
+    val (as, bs) = xs.zipAll(ys).toList.unzip
+    as.takeWhile(_.isDefined).map(_.get) mustBe xs.toList
+    bs.takeWhile(_.isDefined).map(_.get) mustBe ys.toList
+    math.abs(xs.length - ys.length) mustBe (as
+      .dropWhile(_.isDefined)
+      .length max bs.dropWhile(_.isDefined).length)
+  }
+
 }

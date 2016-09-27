@@ -1,6 +1,7 @@
 package fpinscala.datastructures
 
 import scala.annotation.tailrec
+import scala.collection.immutable
 
 sealed trait List[+A]
 
@@ -9,6 +10,12 @@ case object Nil extends List[Nothing]
 case class Cons[+A](head: A, tail: List[A]) extends List[A]
 
 object List {
+
+  def toScalaList[A](l: List[A]): immutable.List[A] =
+    foldRight(l, immutable.Nil: immutable.List[A])((a, acc) => a :: acc)
+
+  def fromScalaList[A](l: immutable.List[A]): List[A] =
+    l.foldRight(Nil: List[A])((a, acc) => Cons(a, acc))
 
   // ex 3.2
   def tail[A](l: List[A]): List[A] = l match {
