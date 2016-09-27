@@ -97,4 +97,41 @@ object Stream {
     case Nil => empty[A]
     case h :: t => cons(h, fromList(t))
   }
+
+  val ones: Stream[Int] = Stream.cons(1, ones)
+
+  // ex 5.8
+  def constant[A](a: A): Stream[A] =
+    cons(a, constant(a))
+
+  // ex 5.9
+  def from(n: Int): Stream[Int] =
+    cons(n, from(n + 1))
+
+  // ex 5.10
+  import fpinscala.gettingstarted.GettingStarted.fib
+
+  def fibs(n: BigInt): Stream[BigInt] = {
+    cons(fib(n), fibs(n + 1))
+  }
+
+  // ex 5.11
+  def unfold[A, S](z: S)(f: S => Option[(A, S)]): Stream[A] = f(z) match {
+    case Some((a, s)) => cons(a, unfold(s)(f))
+    case None => empty[A]
+  }
+
+  // ex 5.12
+  def unfoldFibs(n: BigInt) = unfold((fib(n), fib(n + 1))) {
+    case (a, s) => Some(a, (s, a + s))
+  }
+
+  def unfoldFrom(n: Int) =
+    unfold(n)(x => Some(x, x + 1))
+
+  def unfoldConstant[A](a: A): Stream[A] =
+    unfold(a)(Some(a, _))
+
+  val unfoldOnes: Stream[Int] = unfold(1)(Some(1, _))
+
 }

@@ -31,20 +31,24 @@ class StreamSpec extends CommonSpec {
       xs.append(ys).toList mustBe xs.toList ::: ys.toList
   }
 
-  "length for Stream" should "be equal to length for List" in forAll { xs: Stream[Int] =>
-    xs.length mustBe xs.toList.length
+  "length for Stream" should "be equal to length for List" in forAll {
+    xs: Stream[Int] =>
+      xs.length mustBe xs.toList.length
   }
 
-  "take for Stream" should "be equal to take for List" in forAll { (xs: Stream[Int], n: Int) =>
-    xs.take(n).toList mustBe xs.toList.take(n)
+  "take for Stream" should "be equal to take for List" in forAll {
+    (xs: Stream[Int], n: Int) =>
+      xs.take(n).toList mustBe xs.toList.take(n)
   }
 
-  "drop for Stream" should "be equal to drop for List" in forAll { (xs: Stream[Int], n: Int) =>
-    xs.drop(n).toList mustBe xs.toList.drop(n)
+  "drop for Stream" should "be equal to drop for List" in forAll {
+    (xs: Stream[Int], n: Int) =>
+      xs.drop(n).toList mustBe xs.toList.drop(n)
   }
 
-  "takeWhile from Stream" should "be equal to takeWhile from List" in forAll { (xs: Stream[Int], p: Int => Boolean) =>
-    xs.takeWhile(p).toList mustBe xs.toList.takeWhile(p)
+  "takeWhile from Stream" should "be equal to takeWhile from List" in forAll {
+    (xs: Stream[Int], p: Int => Boolean) =>
+      xs.takeWhile(p).toList mustBe xs.toList.takeWhile(p)
   }
 
   "foldRight a Stream" should "be equal to foldRight a List" in forAll {
@@ -54,8 +58,9 @@ class StreamSpec extends CommonSpec {
       xs.foldRight(z)(g) mustBe xs.toList.foldRight(z)(f)
   }
 
-  "forAll for Stream" should "be equal to forall for List" in forAll { (xs: Stream[Int], p: Int => Boolean) =>
-    xs.forAll(p) mustBe xs.toList.forall(p)
+  "forAll for Stream" should "be equal to forall for List" in forAll {
+    (xs: Stream[Int], p: Int => Boolean) =>
+      xs.forAll(p) mustBe xs.toList.forall(p)
   }
 
   "takeWhileWithFoldRight" should "be equal to foldRight" in forAll {
@@ -68,12 +73,14 @@ class StreamSpec extends CommonSpec {
       xs.headOptionWithFoldRight mustBe xs.headOption
   }
 
-  "map a Stream" should "be equal to map a List" in forAll { (xs: Stream[Int], f: Int => Int) =>
-    xs.map(f).toList mustBe xs.toList.map(f)
+  "map a Stream" should "be equal to map a List" in forAll {
+    (xs: Stream[Int], f: Int => Int) =>
+      xs.map(f).toList mustBe xs.toList.map(f)
   }
 
-  "filter a Stream" should "be equal to filter a List" in forAll { (xs: Stream[Int], p: Int => Boolean) =>
-    xs.filter(p).toList mustBe xs.toList.filter(p)
+  "filter a Stream" should "be equal to filter a List" in forAll {
+    (xs: Stream[Int], p: Int => Boolean) =>
+      xs.filter(p).toList mustBe xs.toList.filter(p)
   }
 
   "appendWithFoldRight" should "be" in forAll {
@@ -93,5 +100,63 @@ class StreamSpec extends CommonSpec {
       xs.find(p) mustBe xs.toList.find(p)
   }
 
+  val genConstAndSize = for {
+    a <- Arbitrary.arbInt.arbitrary
+    n <- Gen.choose(0, 50)
+  } yield (a, n)
+
+  "constant" should "be" in forAll(genConstAndSize) {
+    case (a, n) =>
+      Stream.constant(a).take(n).forAll(_ == a) mustBe true
+  }
+
+  "from" should "be" in forAll {
+    for {
+      n <- Gen.choose(-500, 500)
+      sz <- Gen.choose(1, 50)
+    } yield (n, sz)
+  } {
+    case (n, sz) =>
+      whenever(sz > 0) {
+        Stream.from(n).take(sz).toList mustBe n.until(n + sz).toList
+      }
+  }
+
+  val genNandSize = for {
+    n <- Gen.choose(1, 30)
+    m <- Gen.const(30 - n)
+  } yield (n, m)
+
+  "fibs" should "be" in forAll(genNandSize) {
+    case (n, m) =>
+      whenever(m > 0) {
+        import fpinscala.gettingstarted.GettingStarted.fib
+        Stream.fibs(n).take(m).toList mustBe n.until(n + m).map(fib(_)).toList
+      }
+  }
+
+  // idea to PBT unfold https://gist.github.com/raichoo/53ed5619988c0b4dd590/
+
+  "unfoldFibs" should "be" in forAll(genNandSize) {
+    case (n, m) =>
+      Stream.unfoldFibs(n).take(m).toList mustBe Stream.fibs(n).take(m).toList
+  }
+
+  "unfoldFrom" should "be" in forAll(genNandSize) {
+    case (n, m) =>
+      Stream.unfoldFrom(n).take(m).toList mustBe Stream.from(n).take(m).toList
+  }
+
+  "unfoldConstant" should "be" in forAll(genConstAndSize) {
+    case (a, n) =>
+      Stream.unfoldConstant(a).take(n).toList mustBe Stream
+        .constant(a)
+        .take(n)
+        .toList
+  }
+
+  "unfoldOnes" should "be" in forAll(Gen.choose(0, 100)) { n =>
+    Stream.unfoldOnes.take(n).toList mustBe Stream.unfoldOnes.take(n).toList
+  }
 
 }
