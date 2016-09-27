@@ -58,6 +58,11 @@ class StreamSpec extends CommonSpec {
       xs.foldRight(z)(g) mustBe xs.toList.foldRight(z)(f)
   }
 
+  "exists for a Stream" should "be equal to exists for a List" in forAll {
+    (xs: Stream[Int], p: Int => Boolean) =>
+      xs.exists(p) mustBe xs.toList.exists(p)
+  }
+
   "forAll for Stream" should "be equal to forall for List" in forAll {
     (xs: Stream[Int], p: Int => Boolean) =>
       xs.forAll(p) mustBe xs.toList.forall(p)
@@ -195,7 +200,7 @@ class StreamSpec extends CommonSpec {
     xs <- arbStream[Int].arbitrary
     ys <- arbStream[Int].arbitrary
     zs <- Gen
-      .frequency((9, Gen.const(xs.append(ys), xs)), (1, Gen.const((xs, ys))))
+      .frequency((5, Gen.const(xs.append(ys), xs)), (5, Gen.const((xs, ys))))
   } yield zs
 
   "startsWith for Stream" should "be equal to startsWith for List" in forAll(
@@ -213,6 +218,14 @@ class StreamSpec extends CommonSpec {
       def g(a: Int, b: => Int): Int = f(a, b)
 
       xs.scanRight(z)(g).toList mustBe xs.toList.scanRight(z)(f)
+  }
+
+  "hasSubsequence for Stream" should "be equal to hasSubsequence for List" in forAll(
+    genMaybeSupSub) {
+    case (sup, sub) =>
+      import fpinscala.datastructures.List.{fromScalaList, hasSubsequence}
+      sup.hasSubsequence(sub) mustBe hasSubsequence(fromScalaList(sup.toList),
+                                                    fromScalaList(sub.toList))
   }
 
 }

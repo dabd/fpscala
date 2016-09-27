@@ -47,6 +47,11 @@ sealed trait Stream[+A] {
     case _ => z
   }
 
+  def exists(p: A => Boolean): Boolean = this match {
+    case Cons(h, t) => p(h()) || t().exists(p)
+    case _ => false
+  }
+
   // ex 5.4
   def forAll(p: A => Boolean): Boolean =
     foldRight(true)((a, b) => p(a) && b)
@@ -111,7 +116,7 @@ sealed trait Stream[+A] {
 
   // ex 5.14
   def startsWith[AA >: A](that: Stream[AA]): Boolean =
-    unfoldZipWith(that)((_, _)).forAll(x => x._1 == x._2)
+    zipAll(that).takeWhile(_._2.isDefined).forAll { case (a, b) => a == b }
 
   // ex 5.15
   def tails: Stream[Stream[A]] =
@@ -123,6 +128,9 @@ sealed trait Stream[+A] {
   // ex 5.16
   def scanRight[B](z: B)(f: (A, => B) => B): Stream[B] =
     tails.map(_.foldRight(z)(f))
+
+  def hasSubsequence[A](s: Stream[A]): Boolean =
+    tails exists (_ startsWith s)
 
 }
 
