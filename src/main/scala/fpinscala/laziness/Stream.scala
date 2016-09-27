@@ -94,8 +94,8 @@ sealed trait Stream[+A] {
       case _ => None
     }
 
-  def unfoldZipWith[B, C](bs: Stream[B], f: (A, B) => C): Stream[C] =
-    unfold((this, bs)) {
+  def unfoldZipWith[B, C](that: Stream[B])(f: (A, B) => C): Stream[C] =
+    unfold((this, that)) {
       case (Cons(h1, t1), Cons(h2, t2)) => Some(f(h1(), h2()), (t1(), t2()))
       case _ => None
     }
@@ -108,6 +108,21 @@ sealed trait Stream[+A] {
       case (Empty, Cons(h, t)) => Some((None, Some(h())), (Empty, t()))
       case (Empty, Empty) => None
     }
+
+  // ex 5.14
+  def startsWith[AA >: A](that: Stream[AA]): Boolean =
+    unfoldZipWith(that)((_, _)).forAll(x => x._1 == x._2)
+
+  // ex 5.15
+  def tails: Stream[Stream[A]] =
+    cons(this, unfold(this) {
+      case Cons(_, t) => Some(t(), t())
+      case Empty => None
+    })
+
+  // ex 5.16
+  def scanRight[B](z: B)(f: (A, => B) => B): Stream[B] =
+    tails.map(_.foldRight(z)(f))
 
 }
 

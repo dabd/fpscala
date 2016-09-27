@@ -178,7 +178,7 @@ class StreamSpec extends CommonSpec {
       import fpinscala.datastructures.List.zipWith
       import fpinscala.datastructures.List.fromScalaList
       import fpinscala.datastructures.List.toScalaList
-      xs.unfoldZipWith(ys, f).toList mustBe toScalaList(
+      xs.unfoldZipWith(ys)(f).toList mustBe toScalaList(
         zipWith(fromScalaList(xs.toList), fromScalaList(ys.toList), f))
   }
 
@@ -189,6 +189,30 @@ class StreamSpec extends CommonSpec {
     math.abs(xs.length - ys.length) mustBe (as
       .dropWhile(_.isDefined)
       .length max bs.dropWhile(_.isDefined).length)
+  }
+
+  val genMaybeSupSub = for {
+    xs <- arbStream[Int].arbitrary
+    ys <- arbStream[Int].arbitrary
+    zs <- Gen
+      .frequency((9, Gen.const(xs.append(ys), xs)), (1, Gen.const((xs, ys))))
+  } yield zs
+
+  "startsWith for Stream" should "be equal to startsWith for List" in forAll(
+    genMaybeSupSub) {
+    case (sup, sub) =>
+      sup.startsWith(sub) mustBe sup.toList.startsWith(sub.toList)
+  }
+
+  "tails" should "be" in forAll { xs: Stream[Int] =>
+    xs.tails.map(_.toList).toList mustBe xs.toList.tails.toList
+  }
+
+  "scanRight" should "be" in forAll {
+    (xs: Stream[Int], z: Int, f: (Int, Int) => Int) =>
+      def g(a: Int, b: => Int): Int = f(a, b)
+
+      xs.scanRight(z)(g).toList mustBe xs.toList.scanRight(z)(f)
   }
 
 }
