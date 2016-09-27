@@ -208,7 +208,7 @@ class StreamSpec extends CommonSpec {
     xs.tails.map(_.toList).toList mustBe xs.toList.tails.toList
   }
 
-  "scanRight" should "be" in forAll {
+  "scanRight for Stream" should "be equal to scanRight for List" in forAll {
     (xs: Stream[Int], z: Int, f: (Int, Int) => Int) =>
       def g(a: Int, b: => Int): Int = f(a, b)
 
