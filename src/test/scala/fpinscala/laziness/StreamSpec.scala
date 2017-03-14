@@ -142,6 +142,20 @@ class StreamSpec extends CommonSpec {
 
   // idea to PBT unfold https://gist.github.com/raichoo/53ed5619988c0b4dd590/
 
+  val genUnfold = for {
+    z <- arbInt.arbitrary
+    f <- arbFunction1[Int, Option[(Int, Int)]].arbitrary
+    n <- Gen.choose(1, 50)
+  } yield (z, f, n)
+
+  "unfold" should "be equal to unfoldViaFold" in forAll(genUnfold) {
+    case (z, f, n) =>
+      Stream.unfold(z)(f).take(n).toList mustBe Stream
+        .unfoldViaFold(z)(f)
+        .take(n)
+        .toList
+  }
+
   "unfoldFibs" should "be" in forAll(genNandSize) {
     case (n, m) =>
       Stream.unfoldFibs(n).take(m).toList mustBe Stream.fibs(n).take(m).toList

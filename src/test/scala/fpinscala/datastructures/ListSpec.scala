@@ -3,12 +3,11 @@ package fpinscala.datastructures
 import fpinscala.CommonSpec
 import fpinscala.datastructures.List._
 import org.scalacheck.Arbitrary._
-import org.scalacheck.Prop.{apply => _, _}
+import org.scalacheck.Prop.{apply => _}
 import org.scalacheck.{Arbitrary, Gen}
 
 class ListSpec extends CommonSpec {
 
-  import scala.collection.immutable
   import Arbitrary.arbFunction1
 
   implicit def arbList[T: Arbitrary]: Arbitrary[List[T]] = Arbitrary {

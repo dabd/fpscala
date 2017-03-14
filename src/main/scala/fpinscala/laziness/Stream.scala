@@ -178,6 +178,9 @@ object Stream {
     case None => empty[A]
   }
 
+  def unfoldViaFold[A, S](z: S)(f: S => Option[(A, S)]): Stream[A] =
+    f(z).fold(empty[A])((p: (A, S)) => cons(p._1, unfoldViaFold(p._2)(f)))
+
   // ex 5.12
   def unfoldFibs(n: BigInt) = unfold((fib(n), fib(n + 1))) {
     case (a, s) => Some(a, (s, a + s))
