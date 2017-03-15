@@ -2,7 +2,8 @@ package fpinscala.state
 
 import fpinscala.CommonSpec
 import fpinscala.state.RNG.{Rand, Simple}
-import org.scalacheck.{Arbitrary, Cogen, Gen, Prop}
+import org.scalacheck._
+import org.scalacheck.commands.Commands
 import org.scalatest.prop.Checkers
 
 class StateSpec extends CommonSpec with Checkers {
@@ -54,7 +55,7 @@ class StateSpec extends CommonSpec with Checkers {
 
   "map" should "be" in forAll { (s: Rand[Int], f: Int => Int, rng: RNG) =>
     val (a, rng2) = s(rng)
-    RNG.map(s)(f)(rng) mustBe (f(a), rng2)
+    RNG.map(s)(f)(rng) mustBe(f(a), rng2)
   }
 
   "doubleUsingMap" should "be equal to double" in forAll(genRNG) { rng =>
@@ -62,9 +63,9 @@ class StateSpec extends CommonSpec with Checkers {
   }
 
   "map2" should "be" in forAll(genRand[Int].arbitrary,
-                               genRand[Int].arbitrary,
-                               Arbitrary.arbFunction2[Int, Int, Int].arbitrary,
-                               genRNG) {
+    genRand[Int].arbitrary,
+    Arbitrary.arbFunction2[Int, Int, Int].arbitrary,
+    genRNG) {
     case (r1, r2, f, rng) =>
       val rngResult = RNG.map2[Int, Int, Int](r1, r2)(f)
       val (i, r4) = rngResult(rng)
@@ -82,11 +83,11 @@ class StateSpec extends CommonSpec with Checkers {
       val (l, r) = RNG.sequence(fs)(rng)
       val (g, s) = RNG.sequence(gs)(r)
 
-      RNG.sequence(fs ++ gs)(rng) mustBe (l ++ g, s)
+      RNG.sequence(fs ++ gs)(rng) mustBe(l ++ g, s)
   }
 
   "intsViaSequence" should "be equal to ints" in forAll(genRNG,
-                                                        Gen.choose(0, 50)) {
+    Gen.choose(0, 50)) {
     case (rng, count) =>
       RNG.ints(count)(rng) mustBe RNG.intsViaSequence(count)(rng)
   }
