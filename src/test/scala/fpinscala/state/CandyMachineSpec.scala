@@ -32,14 +32,14 @@ object CandyMachineSpec extends Commands {
 
   override def genCommand(state: State): Gen[Command] = Gen.oneOf(Coin, Turn)
 
-  case object Coin extends Command {
+  sealed class CandyMachineCommand(input: CandyMachine.Input) extends Command {
     override type Result = state.State[Machine, (Int, Int)]
 
     override def run(sut: Sut): Result =
-      CandyMachine.simulateMachine(List(CandyMachine.Coin))
+      CandyMachine.simulateMachine(List(input))
 
     override def nextState(state: State): State =
-      CandyMachine.simulateMachine(List(CandyMachine.Coin)).run(state)._2
+      CandyMachine.simulateMachine(List(input)).run(state)._2
 
     override def preCondition(state: State): Boolean = true
 
@@ -47,32 +47,15 @@ object CandyMachineSpec extends Commands {
       result match {
         case Success(s) =>
           s.run(state)._2 == CandyMachine
-            .simulateMachine(List(CandyMachine.Coin))
+            .simulateMachine(List(input))
             .run(state)
             ._2
         case Failure(_) => false
       }
   }
 
-  case object Turn extends Command {
-    override type Result = state.State[Machine, (Int, Int)]
+  case object Coin extends CandyMachineCommand(CandyMachine.Coin)
 
-    override def run(sut: Sut): Result =
-      CandyMachine.simulateMachine(List(CandyMachine.Turn))
+  case object Turn extends CandyMachineCommand(CandyMachine.Turn)
 
-    override def nextState(state: State): State =
-      CandyMachine.simulateMachine(List(CandyMachine.Turn)).run(state)._2
-
-    override def preCondition(state: State): Boolean = true
-
-    override def postCondition(state: State, result: Try[Result]): Prop =
-      result match {
-        case Success(s) =>
-          s.run(state)._2 == CandyMachine
-            .simulateMachine(List(CandyMachine.Turn))
-            .run(state)
-            ._2
-        case Failure(_) => false
-      }
-  }
 }
