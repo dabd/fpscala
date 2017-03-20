@@ -1,9 +1,8 @@
 package fpinscala.state
 
-import fpinscala._
-import fpinscala.state.CandyMachine.Machine
+import fpinscala.state.CandyMachine.{Input, Machine}
 import org.scalacheck.commands.Commands
-import org.scalacheck.{Gen, Prop, Properties}
+import org.scalacheck.{Arbitrary, Gen, Prop, Properties}
 
 import scala.util.{Failure, Success, Try}
 
@@ -12,8 +11,24 @@ object CommandsCandyMachine extends Properties("CommandsCandyMachine") {
 }
 
 object CandyMachineSpec extends Commands {
-  override type State = Machine
-  override type Sut = Machine
+
+  val genCandyMachine: Gen[Machine] =
+    for {
+      locked <- Arbitrary.arbBool.arbitrary
+      candies <- Gen.choose(0, 20)
+      coins <- Gen.choose(0, 20)
+    } yield Machine(locked, candies, coins)
+
+  case class MutableCandyMachine(machine: Machine) {
+    var machineState: Machine = machine
+    def run(inputs: List[Input]): Unit =
+      machineState = CandyMachine.simulateMachine(inputs).run(machineState)._2
+  }
+
+  case class ModelState(locked: Boolean, candies: Int, coins: Int)
+
+  override type State = ModelState
+  override type Sut = MutableCandyMachine
 
   override def canCreateNewSut(newState: State,
                                initSuts: Traversable[State],
@@ -22,34 +37,50 @@ object CandyMachineSpec extends Commands {
   }
 
   override def newSut(state: State): Sut =
-    Machine(state.locked, state.candies, state.coins)
+    MutableCandyMachine(Machine(state.locked, state.candies, state.coins))
+
   override def destroySut(sut: Sut): Unit = ()
 
-  override def initialPreCondition(state: State): Boolean = state.locked
+  override def initialPreCondition(state: State): Boolean = true
 
   override def genInitialState: Gen[State] =
-    Machine(locked = true, candies = 10, coins = 0)
+    for {
+      machine <- genCandyMachine
+    } yield ModelState(machine.locked, machine.candies, machine.coins)
+
 
   override def genCommand(state: State): Gen[Command] = Gen.oneOf(Coin, Turn)
 
   sealed class CandyMachineCommand(input: CandyMachine.Input) extends Command {
-    override type Result = state.State[Machine, (Int, Int)]
+    override type Result = ModelState
 
-    override def run(sut: Sut): Result =
-      CandyMachine.simulateMachine(List(input))
+    override def run(sut: Sut): Result = {
+      sut.run(List(input))
+      ModelState(sut.machineState.locked, sut.machineState.candies, sut.machineState.coins)
+    }
 
-    override def nextState(state: State): State =
-      CandyMachine.simulateMachine(List(input)).run(state)._2
+    override def nextState(state: State): State = {
+      val s = CandyMachine
+        .simulateMachine(List(input))
+        .run(Machine(state.locked, state.candies, state.coins))
+      val m = s._2
+      ModelState(m.locked, m.candies, m.coins)
+    }
 
     override def preCondition(state: State): Boolean = true
 
     override def postCondition(state: State, result: Try[Result]): Prop =
       result match {
-        case Success(s) =>
-          s.run(state)._2 == CandyMachine
+        case Success(resultState) =>
+          val currState = CandyMachine
             .simulateMachine(List(input))
-            .run(state)
-            ._2
+            .run(Machine(state.locked, state.candies, state.coins))
+          val currMachine = currState._2
+          val modelState = ModelState(currMachine.locked,
+                                      currMachine.candies,
+                                      currMachine.coins)
+          modelState == resultState
+
         case Failure(_) => false
       }
   }

@@ -183,7 +183,7 @@ object CandyMachine {
 
   case class Machine(locked: Boolean, candies: Int, coins: Int)
 
-  def update: (Input) => (Machine) => Machine =
+  def update: Input => Machine => Machine =
     (i: Input) =>
       (s: Machine) =>
         (i, s) match {
