@@ -36,6 +36,16 @@ object Par {
   def lazyUnit[A](a: => A): Par[A] = fork(unit(a))
 
   // ex 7.4
-  def asyncF[A,B](f: A => B): A => Par[B] =
+  def asyncF[A, B](f: A => B): A => Par[B] =
     a => lazyUnit(f(a))
+
+  def map[A, B](pa: Par[A])(f: A => B): Par[B] =
+    map2(pa, unit(()))((a, _) => f(a))
+
+  def lift[A, B](f: A => B): Par[A] => Par[B] =
+    pa => map(pa)(f)
+
+  // ex 7.5
+  def sequence[A](ps: List[Par[A]]): Par[List[A]] =
+    ps.foldRight[Par[List[A]]](unit(List()))((h, t) => map2(h, t)(_ :: _))
 }

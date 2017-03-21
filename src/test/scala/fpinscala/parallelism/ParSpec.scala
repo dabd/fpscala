@@ -20,8 +20,10 @@ class ParSpec extends CommonSpec with Checkers {
   implicit val cogenExecutorService: Cogen[ExecutorService] =
     Cogen[String].contramap(_.toString)
 
-  implicit def genFuture[A]: Gen[Future[A]] =
-    Gen.const(new CompletableFuture[A]())
+  implicit def genFuture[A](implicit a: Arbitrary[A]): Gen[Future[A]] =
+    for {
+      x <- a.arbitrary
+    } yield CompletableFuture.completedFuture(x)
 
   implicit def arbFuture[A](implicit a: Arbitrary[A]): Arbitrary[Future[A]] =
     Arbitrary(genFuture)
@@ -36,6 +38,19 @@ class ParSpec extends CommonSpec with Checkers {
   "asyncF" should "be" in {
     forAll { (a: Int, f: Int => Int, es: ExecutorService) =>
       Par.asyncF(f)(a)(es).get() mustBe f(a)
+    }
+  }
+
+  // ex 7.5
+  "sequence" should "be" in {
+    forAll(Gen.listOfN(20, arbitraryPar[Int].arbitrary),
+           Gen.listOfN(20, arbitraryPar[Int].arbitrary),
+           genExecutorService) {
+      case (xs, ys, es: ExecutorService) =>
+        Par.sequence(xs ++ ys)(es).get() mustBe Par
+          .map2(Par.sequence(xs), Par.sequence(ys))(_ ++ _)(es)
+          .get()
+
     }
   }
 }
