@@ -53,4 +53,23 @@ class ParSpec extends CommonSpec with Checkers {
 
     }
   }
+
+  "parMap" should "be" in {
+    forAll(Gen.listOf(Arbitrary.arbInt.arbitrary),
+      Arbitrary.arbFunction1[Int, Int].arbitrary,
+      genExecutorService) {
+      case (xs, f, es) =>
+        Par.parMap(xs)(f)(es).get() mustBe xs.map(f)
+    }
+  }
+
+  // ex 7.6
+  "parFilter" should "be" in {
+    forAll(Gen.listOf(Arbitrary.arbInt.arbitrary),
+      Arbitrary.arbFunction1[Int, Boolean].arbitrary,
+      genExecutorService) {
+      case (xs, f, es) =>
+        Par.parFilter(xs)(f)(es).get() mustBe xs.filter(f)
+    }
+  }
 }
