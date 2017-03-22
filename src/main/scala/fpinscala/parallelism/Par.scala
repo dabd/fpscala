@@ -61,4 +61,51 @@ object Par {
     map(sequence(xs))(_.flatten)
   }
 
+  // p. 110
+  def sum(ints: IndexedSeq[Int]): Par[Int] =
+    if (ints.length <= 1)
+      Par.unit(ints.headOption getOrElse 0)
+    else {
+      val (l, r) = ints.splitAt(ints.length / 2)
+      Par.map2(Par.fork(sum(l)), Par.fork(sum(r)))(_ + _)
+    }
+
+  // if f is associative
+//  def parFoldRight[A, B](as: IndexedSeq[A], z: B)(f: (A, B) => B): Par[B] = {
+//    as match {
+//      case Seq() => unit(z)
+//      case Seq(x) => unit(f(x, z))
+//      case _ =>
+//        val (l, r) = as.splitAt(as.length / 2)
+//        map2(fork(parFoldRight(l, z)(f)), fork(parFoldRight(r, z)(f)))(f)
+//    }
+//  }
+
+  def map3[A, B, C, D](a: Par[A], b: Par[B], c: Par[C])(
+      f: (A, B, C) => D): Par[D] =
+    (es: ExecutorService) =>
+      map2(b, c)((b2, c2) => (f.curried)(a(es).get())(b2)(c2))(es)
+
+  def map3_v2[A, B, C, D](a: Par[A], b: Par[B], c: Par[C])(
+      f: (A, B, C) => D): Par[D] =
+    map2(map2(a, b)((x, y) => (x, y)), c) {
+      case ((a1, b1), c1) => f(a1, b1, c1)
+    }
+
+  def map4[A, B, C, D, E](a: Par[A], b: Par[B], c: Par[C], d: Par[D])(
+      f: (A, B, C, D) => E): Par[E] =
+    map2(map2(a, b)((x, y) => (x, y)), map2(c, d)((x, y) => (x, y))) {
+      case ((a1, b1), (c1, d1)) => f(a1, b1, c1, d1)
+    }
+
+  def map5[A, B, C, D, E, F](a: Par[A],
+                             b: Par[B],
+                             c: Par[C],
+                             d: Par[D],
+                             e: Par[E])(f: (A, B, C, D, E) => F): Par[F] =
+    map2(map2(map2(a, b)((x, y) => (x, y)), c)((x, y) => (x, y)),
+         map2(d, e)((x, y) => (x, y))) {
+      case (((a1, b1), c1), (d1, e1)) => f(a1, b1, c1, d1, e1)
+    }
+
 }
