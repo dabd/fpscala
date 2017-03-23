@@ -10,7 +10,10 @@ import org.scalatest.prop.Checkers
 class ParSpec extends CommonSpec with Checkers {
 
   implicit val genExecutorService: Gen[ExecutorService] =
-    Gen.const(Executors.newFixedThreadPool(256))
+    for {
+//      nThreads <- Gen.choose(1, 10) // for a small number of threads the fork implementation will sometimes deadlock
+      nThreads <- Gen.const(256)
+    } yield Executors.newFixedThreadPool(nThreads)
 
   implicit val arbExecutorService: Arbitrary[ExecutorService] =
     Arbitrary(genExecutorService)
@@ -37,6 +40,26 @@ class ParSpec extends CommonSpec with Checkers {
   "map2" should "be" in {
     forAll { (a: Par[Int], b: Par[Int], f: (Int, Int) => Int, es: ExecutorService) =>
       Par.map2(a, b)(f)(es).get() mustBe f(a(es).get(), b(es).get())
+    }
+  }
+
+  "map" should "be" in {
+    forAll { (p: Par[Int], es: ExecutorService) =>
+      Par.map(p)(identity)(es).get() mustBe p(es).get()
+    }
+  }
+
+  "map" should "have the fusion property" in {
+    forAll { (pa: Par[Int], f: Int => Int, g: Int => Int, a: Int, es: ExecutorService) =>
+      Par.map(Par.map(pa)(g))(f)(es).get() mustBe Par
+        .map(pa)(f compose g)(es)
+        .get()
+    }
+  }
+
+  "fork x" should "be x" in {
+    forAll { (x: Int, es: ExecutorService) =>
+      Par.fork(Par.unit(x))(es).get() mustBe Par.unit(x)(es).get()
     }
   }
 
@@ -88,7 +111,21 @@ class ParSpec extends CommonSpec with Checkers {
   // p. 110
   "reduce" should "be" in {
     forAll { (xs: List[Int], z: Int, es: ExecutorService) =>
-      Par.reduce(xs.toIndexedSeq, z)(_ + _)(es).get() mustBe xs.toIndexedSeq.foldRight(z)(_ + _)
+      Par.reduce(xs.toIndexedSeq, z)(_ + _)(es).get() mustBe xs.toIndexedSeq
+        .foldRight(z)(_ + _)
+    }
+  }
+
+  "maximum" should "be like max" in {
+    forAll { (xs: List[Int], es: ExecutorService) =>
+      Par.maximum(xs.toIndexedSeq).fold(())(x => x(es).get() mustBe xs.max)
+    }
+  }
+
+  "countWords" should "be" in {
+    forAll { (paragraphs: List[String], es: ExecutorService) =>
+      Par.countWords(paragraphs)(es).get() mustBe paragraphs.foldRight(0)(
+        (paragraph, count) => count + paragraph.split("\\W+").length)
     }
   }
 

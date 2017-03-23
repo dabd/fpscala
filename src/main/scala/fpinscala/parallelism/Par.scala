@@ -87,6 +87,25 @@ object Par {
     }
   }
 
+  def max(x: Option[Int], y: Option[Int]): Option[Int] =
+    for {
+      x <- x
+      y <- y
+    } yield scala.math.max(x, y)
+
+  def maximum(xs: IndexedSeq[Int]): Option[Par[Int]] =
+    xs match {
+      case Seq() => None
+      case Seq(h, t @ _ *) =>
+        Some(reduce(t.toIndexedSeq, h)((x, y) => scala.math.max(x, y)))
+    }
+
+  def countWords(paragraphs: List[String]): Par[Int] =
+    (es: ExecutorService) => {
+      val counts = parMap(paragraphs)(_.split("\\W+").length)(es).get()
+      reduce(counts.toIndexedSeq, 0)(_ + _)(es)
+    }
+
   def map3[A, B, C, D](a: Par[A], b: Par[B], c: Par[C])(
       f: (A, B, C) => D): Par[D] =
     (es: ExecutorService) =>
