@@ -10,7 +10,7 @@ import org.scalatest.prop.Checkers
 class ParSpec extends CommonSpec with Checkers {
 
   implicit val genExecutorService: Gen[ExecutorService] =
-    Gen.const(Executors.newFixedThreadPool(4))
+    Gen.const(Executors.newFixedThreadPool(256))
 
   implicit val arbExecutorService: Arbitrary[ExecutorService] =
     Arbitrary(genExecutorService)
@@ -79,18 +79,18 @@ class ParSpec extends CommonSpec with Checkers {
     }
   }
 
-  "sum" should "be" in {
-    val es = Executors.newFixedThreadPool(4)
-    val xs = (1 to 6).toIndexedSeq
-    Par.sum(xs)(es).get() mustBe xs.sum
-  }
+//  "sum" should "be" in {
+//    val es = Executors.newFixedThreadPool(4)
+//    val xs = (1 to 6).toIndexedSeq
+//    Par.sum(xs)(es).get() mustBe xs.sum
+//  }
 
   // p. 110
-//  "parFoldRight" should "be" in {
-//    forAll { (xs: List[Int], f: (Int, I nt) => Int, z: Int, es: ExecutorService) =>
-//      Par.parFoldRight(xs.toIndexedSeq, z)(f)(es).get() mustBe xs.toIndexedSeq.foldRight(z)(f)
-//    }
-//  }
+  "reduce" should "be" in {
+    forAll { (xs: List[Int], z: Int, es: ExecutorService) =>
+      Par.reduce(xs.toIndexedSeq, z)(_ + _)(es).get() mustBe xs.toIndexedSeq.foldRight(z)(_ + _)
+    }
+  }
 
   "map3" should "be" in {
     forAll { (a: Par[Int], b: Par[Int], c: Par[Int], f: (Int, Int, Int) => Int, es: ExecutorService) =>

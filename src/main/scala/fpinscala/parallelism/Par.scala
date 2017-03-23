@@ -70,16 +70,22 @@ object Par {
       Par.map2(Par.fork(sum(l)), Par.fork(sum(r)))(_ + _)
     }
 
-  // if f is associative
-//  def parFoldRight[A, B](as: IndexedSeq[A], z: B)(f: (A, B) => B): Par[B] = {
-//    as match {
-//      case Seq() => unit(z)
-//      case Seq(x) => unit(f(x, z))
-//      case _ =>
-//        val (l, r) = as.splitAt(as.length / 2)
-//        map2(fork(parFoldRight(l, z)(f)), fork(parFoldRight(r, z)(f)))(f)
-//    }
-//  }
+  // a parallel fold only works if bs forms a monoid under f (meaning f is associative and z is the neutral element)
+  // a reduce only requires bs forms a semigroup under f (f is associative)
+  def reduce[A](xs: IndexedSeq[A], z: A)(f: (A, A) => A): Par[A] = {
+    def rec(ys: IndexedSeq[A]): Par[A] =
+      ys match {
+        case Seq(y) => unit(y)
+        case _ =>
+          val (l, r) = ys.splitAt(ys.length / 2)
+          map2(fork(rec(l)), fork(rec(r)))(f)
+      }
+    xs match {
+      case Seq() => unit(z)
+      case Seq(x) => unit(f(x, z))
+      case ws => map2(unit(z), rec(ws))(f)
+    }
+  }
 
   def map3[A, B, C, D](a: Par[A], b: Par[B], c: Par[C])(
       f: (A, B, C) => D): Par[D] =
