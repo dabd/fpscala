@@ -2,7 +2,7 @@ package fpinscala.parallelism
 
 import java.util.concurrent.{Callable, ExecutorService, Future, TimeUnit}
 
-object Par {
+object ParBlocking {
 
   // ex 7.1
   //  def map2[A, B, C](a: Par[A], b: Par[B])(f: (A, B) => C): Par[C]
@@ -64,10 +64,10 @@ object Par {
   // p. 110
   def sum(ints: IndexedSeq[Int]): Par[Int] =
     if (ints.length <= 1)
-      Par.unit(ints.headOption getOrElse 0)
+      ParBlocking.unit(ints.headOption getOrElse 0)
     else {
       val (l, r) = ints.splitAt(ints.length / 2)
-      Par.map2(Par.fork(sum(l)), Par.fork(sum(r)))(_ + _)
+      ParBlocking.map2(ParBlocking.fork(sum(l)), ParBlocking.fork(sum(r)))(_ + _)
     }
 
   // a parallel fold only works if bs forms a monoid under f (meaning f is associative and z is the neutral element)

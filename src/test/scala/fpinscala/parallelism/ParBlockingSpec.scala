@@ -3,11 +3,11 @@ package fpinscala.parallelism
 import java.util.concurrent._
 
 import fpinscala.CommonSpec
-import fpinscala.parallelism.Par.Par
+import fpinscala.parallelism.ParBlocking._
 import org.scalacheck.{Arbitrary, Cogen, Gen}
 import org.scalatest.prop.Checkers
 
-class ParSpec extends CommonSpec with Checkers {
+class ParBlockingSpec extends CommonSpec with Checkers {
 
   implicit val genExecutorService: Gen[ExecutorService] =
     for {
@@ -23,63 +23,56 @@ class ParSpec extends CommonSpec with Checkers {
   implicit val cogenExecutorService: Cogen[ExecutorService] =
     Cogen[String].contramap(_.toString)
 
-  implicit def genFuture[A](implicit a: Arbitrary[A]): Gen[Future[A]] =
+  implicit def genFuture[A: Arbitrary]: Gen[Future[A]] =
     for {
-      x <- a.arbitrary
+      x <- implicitly[Arbitrary[A]].arbitrary
     } yield CompletableFuture.completedFuture(x)
 
-  implicit def arbFuture[A](implicit a: Arbitrary[A]): Arbitrary[Future[A]] =
-    Arbitrary(genFuture)
+  implicit def arbFuture[A: Arbitrary]: Arbitrary[Future[A]] =
+    Arbitrary(genFuture[A])
 
-  implicit def cogenFuture[A](implicit a: Cogen[A]): Cogen[Future[A]] =
-    Cogen[String].contramap(_.toString)
-
-  implicit def arbitraryPar[A: Arbitrary]: Arbitrary[Par[A]] =
+  implicit def arbPar[A: Arbitrary]: Arbitrary[Par[A]] =
     Arbitrary.arbFunction1[ExecutorService, Future[A]]
 
   "map2" should "be" in {
     forAll { (a: Par[Int], b: Par[Int], f: (Int, Int) => Int, es: ExecutorService) =>
-      Par.map2(a, b)(f)(es).get() mustBe f(a(es).get(), b(es).get())
+      map2(a, b)(f)(es).get() mustBe f(a(es).get(), b(es).get())
     }
   }
 
   "map" should "be" in {
     forAll { (p: Par[Int], es: ExecutorService) =>
-      Par.map(p)(identity)(es).get() mustBe p(es).get()
+      map(p)(identity)(es).get() mustBe p(es).get()
     }
   }
 
   "map" should "have the fusion property" in {
     forAll { (pa: Par[Int], f: Int => Int, g: Int => Int, a: Int, es: ExecutorService) =>
-      Par.map(Par.map(pa)(g))(f)(es).get() mustBe Par
-        .map(pa)(f compose g)(es)
-        .get()
+      map(map(pa)(g))(f)(es).get() mustBe map(pa)(f compose g)(es).get()
     }
   }
 
   "fork x" should "be x" in {
     forAll { (x: Int, es: ExecutorService) =>
-      Par.fork(Par.unit(x))(es).get() mustBe Par.unit(x)(es).get()
+      fork(unit(x))(es).get() mustBe unit(x)(es).get()
     }
   }
 
   // ex 7.4
   "asyncF" should "be" in {
     forAll { (a: Int, f: Int => Int, es: ExecutorService) =>
-      Par.asyncF(f)(a)(es).get() mustBe f(a)
+      asyncF(f)(a)(es).get() mustBe f(a)
     }
   }
 
   // ex 7.5
   "sequence" should "be" in {
-    forAll(Gen.listOfN(20, arbitraryPar[Int].arbitrary),
-           Gen.listOfN(20, arbitraryPar[Int].arbitrary),
+    forAll(Gen.listOfN(20, arbPar[Int].arbitrary),
+           Gen.listOfN(20, arbPar[Int].arbitrary),
            genExecutorService) {
       case (xs, ys, es: ExecutorService) =>
-        Par.sequence(xs ++ ys)(es).get() mustBe Par
-          .map2(Par.sequence(xs), Par.sequence(ys))(_ ++ _)(es)
-          .get()
-
+        sequence(xs ++ ys)(es)
+          .get() mustBe map2(sequence(xs), sequence(ys))(_ ++ _)(es).get()
     }
   }
 
@@ -88,7 +81,7 @@ class ParSpec extends CommonSpec with Checkers {
            Arbitrary.arbFunction1[Int, Int].arbitrary,
            genExecutorService) {
       case (xs, f, es) =>
-        Par.parMap(xs)(f)(es).get() mustBe xs.map(f)
+        parMap(xs)(f)(es).get() mustBe xs.map(f)
     }
   }
 
@@ -98,7 +91,7 @@ class ParSpec extends CommonSpec with Checkers {
            Arbitrary.arbFunction1[Int, Boolean].arbitrary,
            genExecutorService) {
       case (xs, f, es) =>
-        Par.parFilter(xs)(f)(es).get() mustBe xs.filter(f)
+        parFilter(xs)(f)(es).get() mustBe xs.filter(f)
     }
   }
 
@@ -111,29 +104,30 @@ class ParSpec extends CommonSpec with Checkers {
   // p. 110
   "reduce" should "be" in {
     forAll { (xs: List[Int], z: Int, es: ExecutorService) =>
-      Par.reduce(xs.toIndexedSeq, z)(_ + _)(es).get() mustBe xs.toIndexedSeq
-        .foldRight(z)(_ + _)
+      reduce(xs.toIndexedSeq, z)(_ + _)(es)
+        .get() mustBe xs.toIndexedSeq.foldRight(z)(_ + _)
     }
   }
 
   "maximum" should "be like max" in {
     forAll { (xs: List[Int], es: ExecutorService) =>
-      Par.maximum(xs.toIndexedSeq).fold(())(x => x(es).get() mustBe xs.max)
+      maximum(xs.toIndexedSeq).fold(())(x => x(es).get() mustBe xs.max)
     }
   }
 
   "countWords" should "be" in {
     forAll { (paragraphs: List[String], es: ExecutorService) =>
-      Par.countWords(paragraphs)(es).get() mustBe paragraphs.foldRight(0)(
-        (paragraph, count) => count + paragraph.split("\\W+").length)
+      countWords(paragraphs)(es).get() mustBe
+        paragraphs.foldRight(0)((paragraph, count) =>
+          count + paragraph.split("\\W+").length)
     }
   }
 
   "map3" should "be" in {
     forAll { (a: Par[Int], b: Par[Int], c: Par[Int], f: (Int, Int, Int) => Int, es: ExecutorService) =>
-      Par.map3(a, b, c)(f)(es).get() must (equal(
-        f(a(es).get(), b(es).get(), c(es).get()))
-        and equal(Par.map3_v2(a, b, c)(f)(es).get()))
+      map3(a, b, c)(f)(es).get() must
+        (equal(f(a(es).get(), b(es).get(), c(es).get())) and
+          equal(map3_v2(a, b, c)(f)(es).get()))
     }
   }
 
@@ -144,10 +138,10 @@ class ParSpec extends CommonSpec with Checkers {
      d: Par[Int],
      f: (Int, Int, Int, Int) => Int,
      es: ExecutorService) =>
-      Par.map4(a, b, c, d)(f)(es).get() mustBe f(a(es).get(),
-                                                 b(es).get(),
-                                                 c(es).get(),
-                                                 d(es).get())
+      map4(a, b, c, d)(f)(es).get() mustBe f(a(es).get(),
+                                             b(es).get(),
+                                             c(es).get(),
+                                             d(es).get())
 
   }
 
@@ -160,21 +154,21 @@ class ParSpec extends CommonSpec with Checkers {
                       (Int, Int, Int, Int, Int) => Int,
                       ExecutorService)] =
       for {
-        a <- arbitraryPar[Int].arbitrary
-        b <- arbitraryPar[Int].arbitrary
-        c <- arbitraryPar[Int].arbitrary
-        d <- arbitraryPar[Int].arbitrary
-        e <- arbitraryPar[Int].arbitrary
+        a <- arbPar[Int].arbitrary
+        b <- arbPar[Int].arbitrary
+        c <- arbPar[Int].arbitrary
+        d <- arbPar[Int].arbitrary
+        e <- arbPar[Int].arbitrary
         f <- Arbitrary.arbFunction5[Int, Int, Int, Int, Int, Int].arbitrary
         es <- arbExecutorService.arbitrary
       } yield (a, b, c, d, e, f, es)
     forAll(genArgs) {
       case (a, b, c, d, e, f, es) =>
-        Par.map5(a, b, c, d, e)(f)(es).get() mustBe f(a(es).get(),
-                                                      b(es).get(),
-                                                      c(es).get(),
-                                                      d(es).get(),
-                                                      e(es).get())
+        map5(a, b, c, d, e)(f)(es).get() mustBe f(a(es).get(),
+                                                  b(es).get(),
+                                                  c(es).get(),
+                                                  d(es).get(),
+                                                  e(es).get())
 
     }
   }
