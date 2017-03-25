@@ -3,16 +3,16 @@ package fpinscala.parallelism
 import java.util.concurrent._
 
 import fpinscala.CommonSpec
-import fpinscala.parallelism.ParBlocking._
+import fpinscala.parallelism.Blocking._
 import org.scalacheck.{Arbitrary, Cogen, Gen}
 import org.scalatest.prop.Checkers
 
-class ParBlockingSpec extends CommonSpec with Checkers {
+class BlockingSpec extends CommonSpec with Checkers {
 
   implicit val genExecutorService: Gen[ExecutorService] =
     for {
 //      nThreads <- Gen.choose(1, 10) // for a small number of threads the fork implementation will sometimes deadlock
-      nThreads <- Gen.const(256)
+      nThreads <- Gen.const(32)
     } yield Executors.newFixedThreadPool(nThreads)
 
   implicit val arbExecutorService: Arbitrary[ExecutorService] =
@@ -103,23 +103,28 @@ class ParBlockingSpec extends CommonSpec with Checkers {
 
   // p. 110
   "reduce" should "be" in {
-    forAll { (xs: List[Int], z: Int, es: ExecutorService) =>
-      reduce(xs.toIndexedSeq, z)(_ + _)(es)
-        .get() mustBe xs.toIndexedSeq.foldRight(z)(_ + _)
+    forAll(Gen.listOfN(10, Arbitrary.arbInt.arbitrary),
+           Arbitrary.arbInt.arbitrary,
+           genExecutorService) {
+      case (xs, z, es) =>
+        reduce(xs.toIndexedSeq, z)(_ + _)(es)
+          .get() mustBe xs.toIndexedSeq.foldRight(z)(_ + _)
     }
   }
 
   "maximum" should "be like max" in {
-    forAll { (xs: List[Int], es: ExecutorService) =>
-      maximum(xs.toIndexedSeq).fold(())(x => x(es).get() mustBe xs.max)
+    forAll(Gen.listOfN(10, Arbitrary.arbInt.arbitrary), genExecutorService) {
+      case (xs, es) =>
+        maximum(xs.toIndexedSeq).fold(())(x => x(es).get() mustBe xs.max)
     }
   }
 
   "countWords" should "be" in {
-    forAll { (paragraphs: List[String], es: ExecutorService) =>
-      countWords(paragraphs)(es).get() mustBe
-        paragraphs.foldRight(0)((paragraph, count) =>
-          count + paragraph.split("\\W+").length)
+    forAll(Gen.listOfN(10, Arbitrary.arbString.arbitrary), genExecutorService) {
+      case (paragraphs, es) =>
+        countWords(paragraphs)(es).get() mustBe
+          paragraphs.foldRight(0)((paragraph, count) =>
+            count + paragraph.split("\\W+").length)
     }
   }
 

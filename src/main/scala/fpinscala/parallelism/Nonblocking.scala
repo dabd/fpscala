@@ -128,5 +128,49 @@ object Nonblocking {
 
     def parMap[A, B](as: IndexedSeq[A])(f: A => B): Par[IndexedSeq[B]] =
       sequenceBalanced(as.map(asyncF(f)))
+
+    // ex 7.11
+    def choiceN[A](n: Par[Int])(choices: List[Par[A]]): Par[A] =
+      es => choices(run(es)(n))(es)
+
+    def choice[A](cond: Par[Boolean])(t: Par[A], f: Par[A]): Par[A] =
+      choiceN(map(cond)(if (_) 0 else 1))(List(t, f))
+
+    // ex 7.12
+    def choiceMap[K, V](key: Par[K])(choices: Map[K, Par[V]]): Par[V] =
+      es => {
+        val k = run(es)(key)
+        choices(k)(es)
+      }
+
+    // ex 7.13
+    def chooser[A, B](pa: Par[A])(choices: A => Par[B]): Par[B] =
+      es => choices(run(es)(pa))(es)
+
+    def choiceViaChooser[A](cond: Par[Boolean])(t: Par[A], f: Par[A]): Par[A] =
+      chooser(cond)(if (_) t else f)
+
+    def choiceNViaChooser[A](n: Par[Int])(choices: List[Par[A]]): Par[A] =
+      chooser(n)(i => choices(i))
+
+    def flatMap[A, B](pa: Par[A])(f: A => Par[B]): Par[B] =
+      es =>
+        new Future[B] {
+          def apply(cb: B => Unit): Unit =
+            pa(es)(a => f(a)(es)(cb))
+      }
+
+    def join[A](ppa: Par[Par[A]]): Par[A] =
+      es =>
+        new Future[A] {
+          def apply(cb: A => Unit): Unit =
+            ppa(es)(pa => eval(es) { pa(es)(cb) })
+      }
+
+    def flatMapViaJoin[A, B](pa: Par[A])(f: A => Par[B]): Par[B] =
+      join(map(pa)(f))
+
+    def joinViaFlatMap[A](ppa: Par[Par[A]]): Par[A] =
+      flatMap(ppa)(identity)
   }
 }
