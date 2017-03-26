@@ -95,11 +95,12 @@ class BlockingSpec extends CommonSpec with Checkers {
     }
   }
 
-//  "sum" should "be" in {
-//    val es = Executors.newFixedThreadPool(4)
-//    val xs = (1 to 6).toIndexedSeq
-//    Par.sum(xs)(es).get() mustBe xs.sum
-//  }
+  "sum" should "be" in {
+    forAll(Gen.listOfN(10, Arbitrary.arbInt.arbitrary), genExecutorService) {
+      case (xs, es) =>
+        sum(xs.toIndexedSeq)(es).get() mustBe xs.sum
+    }
+  }
 
   // p. 110
   "reduce" should "be" in {
