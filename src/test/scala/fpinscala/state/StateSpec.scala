@@ -3,16 +3,32 @@ package fpinscala.state
 import fpinscala.CommonSpec
 import fpinscala.state.RNG.{Rand, Simple}
 import org.scalacheck._
-import org.scalacheck.commands.Commands
 import org.scalatest.prop.Checkers
 
-class StateSpec extends CommonSpec with Checkers {
-
-  val genRNG = for {
+object StateSpec {
+  val genRNG: Gen[Simple] = for {
     seed <- Arbitrary.arbLong.arbitrary
   } yield Simple(seed)
 
-  implicit val arbitraryRNG: Arbitrary[RNG] = Arbitrary(genRNG)
+  implicit val arbRNG: Arbitrary[RNG] = Arbitrary(genRNG)
+
+  // https://gitter.im/typelevel/cats?at=581253788ed1c0ff5c3619a9
+  implicit val cogenRNG: Cogen[RNG] = Cogen[Int].contramap(_.nextInt._1)
+
+  implicit def arbRand[T: Arbitrary]: Arbitrary[RNG.Rand[T]] =
+    Arbitrary.arbFunction1[RNG, (T, RNG)]
+
+  implicit def arbStateRNG[T: Arbitrary]: Arbitrary[State[RNG, T]] =
+    Arbitrary {
+      for {
+        run <- Arbitrary.arbFunction1[RNG, (T, RNG)].arbitrary
+      } yield State(run)
+    }
+}
+
+class StateSpec extends CommonSpec with Checkers {
+
+  import StateSpec._
 
   "nonNegativeInt" should "be" in forAll(genRNG, MinSuccessful(1000000)) {
     rng =>
@@ -47,12 +63,6 @@ class StateSpec extends CommonSpec with Checkers {
       RNG.ints(count)(rng) mustBe RNG.intsTailRec(count)(rng)
   }
 
-  // https://gitter.im/typelevel/cats?at=581253788ed1c0ff5c3619a9
-  implicit val cogenRNG: Cogen[RNG] = Cogen[Int].contramap(_.nextInt._1)
-
-  implicit def arbitraryRand[T: Arbitrary]: Arbitrary[RNG.Rand[T]] =
-    Arbitrary.arbFunction1[RNG, (T, RNG)]
-
   "map" should "be" in forAll { (s: Rand[Int], f: Int => Int, rng: RNG) =>
     val (a, rng2) = s(rng)
     RNG.map(s)(f)(rng) mustBe (f(a), rng2)
@@ -62,8 +72,8 @@ class StateSpec extends CommonSpec with Checkers {
     RNG.doubleUsingMap(rng) mustBe RNG.double(rng)
   }
 
-  "map2" should "be" in forAll(arbitraryRand[Int].arbitrary,
-                               arbitraryRand[Int].arbitrary,
+  "map2" should "be" in forAll(arbRand[Int].arbitrary,
+                               arbRand[Int].arbitrary,
                                Arbitrary.arbFunction2[Int, Int, Int].arbitrary,
                                genRNG) {
     case (r1, r2, f, rng) =>
@@ -113,13 +123,6 @@ class StateSpec extends CommonSpec with Checkers {
     (ra: Rand[Int], rb: Rand[Int], f: (Int, Int) => Int, rng: RNG) =>
       RNG.map2viaFlatMap(ra, rb)(f)(rng) mustBe RNG.map2(ra, rb)(f)(rng)
   }
-
-  implicit def arbStateRNG[T: Arbitrary]: Arbitrary[State[RNG, T]] =
-    Arbitrary {
-      for {
-        run <- Arbitrary.arbFunction1[RNG, (T, RNG)].arbitrary
-      } yield State(run)
-    }
 
   "State.flatMap" should "be" in forAll { (s: State[RNG, Int], f: Int => State[RNG, Int], rng: RNG) =>
     val (a, rng2) = s.run(rng)
