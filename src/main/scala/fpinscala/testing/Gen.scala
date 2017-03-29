@@ -11,7 +11,15 @@ trait Prop {
   }
 }
 
-case class Gen[A](sample: State[RNG, A])
+case class Gen[A](sample: State[RNG, A]) {
+
+  // ex 8.6
+  def flatMap[B](f: A => Gen[B]): Gen[B] =
+    Gen(sample.flatMap(f(_).sample))
+
+  def listOfN(size: Gen[Int]): Gen[List[A]] =
+    size.flatMap(Gen.listOfN(_, this))
+}
 
 object Gen {
 
@@ -34,6 +42,9 @@ object Gen {
     }))
 
   def listOfN[A](n: Int, g: Gen[A]): Gen[List[A]] =
+    Gen(State.sequence(List.fill(n)(g.sample)))
+
+  def listOfN2[A](n: Int, g: Gen[A]): Gen[List[A]] =
     Gen(State(rng => ((1 to n).map(_ => g.sample.run(rng)._1).toList, rng)))
 
 }
