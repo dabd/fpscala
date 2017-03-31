@@ -43,7 +43,7 @@ class GenSpec extends CommonSpec with Checkers {
     }
 
   // FIXME test for shrinker
-  "shrinkChooseInput" should "be" in {
+  "shrinkChooseInput" should "be" ignore {
     forAll { (c: ChooseInput) =>
       scalacheck.Shrink.shrink(c).foreach {
         println(_)
@@ -99,6 +99,35 @@ class GenSpec extends CommonSpec with Checkers {
     } yield (gen, size, rng)) {
       case (gen, size, rng) =>
         gen.listOfN(unit(size)).sample.run(rng)._1.size mustBe size
+    }
+  }
+
+  // ex 8.7
+  "union" should "be" in {
+    forAll { (rng: RNG) =>
+      Range(0, 20) must contain(
+        union(choose(0, 10), choose(11, 20)).sample.run(rng)._1)
+    }
+  }
+
+  // ex 8.8
+  "weighted" should "be" in {
+    forAll { (rng: RNG) =>
+      val xs = (1 to 10000)
+        .foldLeft((List(), rng): (List[Int], RNG)) {
+          case ((ns, prevRng), _) =>
+            val (n, currRng) =
+              weighted((unit(1), 0.7), (unit(2), 0.3)).sample.run(prevRng)
+            (n :: ns, currRng)
+        }
+        ._1
+
+      val freqs = xs.groupBy(identity).mapValues(_.size)
+      val normalizedFreqs = freqs.mapValues(_ / freqs.values.toList.sum.toDouble)
+
+      val eps = 0.05
+      normalizedFreqs(1) mustBe (0.7 +- eps)
+      normalizedFreqs(2) mustBe (0.3 +- eps)
     }
   }
 

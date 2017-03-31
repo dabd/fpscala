@@ -1,6 +1,6 @@
 name := "fpinscala"
 
-scalaVersion := "2.11.8"
+scalaVersion := "2.12.1"
 
 resolvers ++= Seq(
   Resolver.sonatypeRepo("releases"),
